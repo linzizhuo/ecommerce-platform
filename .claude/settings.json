@@ -14,7 +14,10 @@
       "Bash(mysql -h 192.168.31.95 -u root -p123456 -e \"SELECT 1\")",
       "Bash(mysql -h 192.168.31.95 -u root -p123456)",
       "Bash(pkill -f \"CloudMallApplication\" 2>/dev/null; sleep 1 *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit -m 'fix: 测试修复 — JSON body传参+商品状态值+Redis密码+MySQL IP *)",
+      "Bash(npx vite *)",
+      "Bash(git commit *)"
     ],
     "additionalDirectories": [
       "/tmp"
