@@ -3,16 +3,25 @@ server:
 
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/ecommerce?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://192.168.0.181:3306/ecommerce?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&createDatabaseIfNotExist=true
     username: root
     password: root
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+  # Redis
+  data:
+    redis:
+      host: 192.168.0.181
+      port: 6379
+      password:
+
+  # 去掉Thymeleaf → 纯REST API
   thymeleaf:
-    cache: false
-    prefix: classpath:/templates/
-    suffix: .html
-    encoding: UTF-8
+    enabled: false
+
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
 
 mybatis-plus:
   configuration:
@@ -21,3 +30,8 @@ mybatis-plus:
   global-config:
     db-config:
       id-type: auto
+
+# Knife4j API文档
+springdoc:
+  swagger-ui:
+    path: /doc.html

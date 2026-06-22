@@ -11,10 +11,10 @@
     </parent>
 
     <groupId>com.cloudmall</groupId>
-    <artifactId>mvc-architecture</artifactId>
-    <version>1.1.0</version>
-    <name>CloudMall MVC Architecture</name>
-    <description>MVC三层架构 - Controller+Service+Mapper, JWT认证</description>
+    <artifactId>vue-springboot</artifactId>
+    <version>2.0.0</version>
+    <name>CloudMall Vue+SpringBoot</name>
+    <description>前后端分离架构 - Vue3 SPA + SpringBoot REST API + Redis</description>
 
     <properties>
         <java.version>17</java.version>
@@ -57,6 +57,24 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-crypto</artifactId>
+        </dependency>
+
+        <!-- Redis -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson-spring-boot-starter</artifactId>
+            <version>3.27.0</version>
+        </dependency>
+
+        <!-- Knife4j API文档 -->
+        <dependency>
+            <groupId>com.github.xiaoymin</groupId>
+            <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
+            <version>4.4.0</version>
         </dependency>
 
         <!-- JWT -->
