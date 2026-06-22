@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>登录 - CloudMall</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header>
+    <div class="top-bar">
+        <div class="container">
+            <a href="/" class="logo">CloudMall</a>
+        </div>
+    </div>
+</header>
+
+<div class="container">
+    <div class="form-box">
+        <h2>用户登录</h2>
+        <div th:if="${error}" class="error-msg" th:text="${error}"></div>
+
+        <form action="/user/login" method="post">
+            <div class="form-group">
+                <label>手机号</label>
+                <input type="text" name="phone" required placeholder="请输入手机号">
+            </div>
+            <div class="form-group">
+                <label>密码</label>
+                <input type="password" name="password" required placeholder="请输入密码">
+            </div>
+            <button type="submit" class="btn-primary">登录</button>
+        </form>
+
+        <p class="form-footer">
+            还没有账号？<a href="/user/register">立即注册</a>
+        </p>
+    </div>
+</div>
+
+<footer>
+    <p>CloudMall MV架构 &copy; 2026</p>
+</footer>
+</body>
+</html>

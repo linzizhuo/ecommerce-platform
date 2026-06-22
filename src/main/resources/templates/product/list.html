@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>CloudMall - 商品列表</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<!-- 顶部导航 -->
+<header>
+    <div class="top-bar">
+        <div class="container">
+            <a href="/" class="logo">CloudMall</a>
+            <div class="search-box">
+                <form action="/product/list" method="get">
+                    <input type="text" name="keyword" th:value="${keyword}" placeholder="搜索商品...">
+                    <button type="submit">搜索</button>
+                </form>
+            </div>
+            <div class="user-menu">
+                <th:block th:if="${session.user == null}">
+                    <a href="/user/login">登录</a>
+                    <a href="/user/register">注册</a>
+                </th:block>
+                <th:block th:if="${session.user != null}">
+                    <span th:text="${session.user.nickname}">用户</span>
+                    <a href="/user/logout">退出</a>
+                </th:block>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div class="container main-layout">
+    <!-- 左侧类目导航 -->
+    <aside class="category-nav">
+        <h3>全部分类</h3>
+        <ul>
+            <li><a href="/product/list" th:classappend="${categoryId == null} ? 'active'">全部</a></li>
+            <li th:each="cat : ${categories}">
+                <a th:href="@{/product/list(categoryId=${cat.id})}"
+                   th:text="${cat.name}"
+                   th:classappend="${categoryId == cat.id} ? 'active'"></a>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- 商品列表 -->
+    <main class="product-list">
+        <div th:if="${#lists.isEmpty(products)}" class="empty">
+            <p>暂无商品</p>
+        </div>
+        <div class="product-grid">
+            <div th:each="p : ${products}" class="product-card">
+                <a th:href="@{/product/{id}(id=${p.id})}">
+                    <img th:src="${p.mainImage} ?: @{/images/default-product.png}" alt="" class="product-img">
+                    <div class="product-info">
+                        <h4 th:text="${p.name}"></h4>
+                        <p class="brand" th:text="${p.brand}"></p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </main>
+</div>
+
+<footer>
+    <p>CloudMall MV架构 &copy; 2026</p>
+</footer>
+</body>
+</html>

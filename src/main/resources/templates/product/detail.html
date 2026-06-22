@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${product.name} + ' - CloudMall'">商品详情</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<header>
+    <div class="top-bar">
+        <div class="container">
+            <a href="/" class="logo">CloudMall</a>
+            <div class="user-menu">
+                <th:block th:if="${session.user == null}">
+                    <a href="/user/login">登录</a>
+                </th:block>
+                <th:block th:if="${session.user != null}">
+                    <span th:text="${session.user.nickname}"></span>
+                    <a href="/user/logout">退出</a>
+                </th:block>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div class="container">
+    <nav class="breadcrumb">
+        <a href="/">首页</a> &gt;
+        <span th:text="${product.name}"></span>
+    </nav>
+
+    <div class="product-detail">
+        <!-- 主图 -->
+        <div class="detail-image">
+            <img th:src="${product.mainImage} ?: @{/images/default-product.png}" alt="">
+        </div>
+
+        <!-- 商品信息 -->
+        <div class="detail-info">
+            <h2 th:text="${product.name}"></h2>
+            <p class="brand" th:text="'品牌: ' + ${product.brand}"></p>
+
+            <!-- SKU列表 -->
+            <div class="sku-list">
+                <h4>规格选择</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>规格</th>
+                            <th>价格</th>
+                            <th>库存</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="sku : ${skuList}">
+                            <td th:text="${sku.specInfo}"></td>
+                            <td class="price" th:text="${sku.price / 100.0} + '元'"></td>
+                            <td th:text="${sku.stock}"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p class="desc" th:text="${product.description}"></p>
+
+            <div class="actions">
+                <a href="/" class="btn-back">返回列表</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <p>CloudMall MV架构 &copy; 2026</p>
+</footer>
+</body>
+</html>
