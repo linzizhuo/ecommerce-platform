@@ -18,6 +18,10 @@ public class WebConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(jwtInterceptor)
                 .addPathPatterns("/api/**")           // API接口需要登录
-                .excludePathPatterns("/api/user/login", "/api/user/register"); // 登录注册放行
+                .excludePathPatterns(
+                        "/api/user/login", "/api/user/register",
+                        "/api/product/**",        // 商品浏览公开
+                        "/api/category/**"         // 类目公开
+                );
     }
 }

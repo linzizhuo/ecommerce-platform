@@ -8,12 +8,12 @@ import java.util.List;
 
 public interface ProductMapper extends BaseMapper<Product> {
 
-    @Select("SELECT * FROM t_product WHERE status = 1 ORDER BY create_time DESC")
+    @Select("SELECT * FROM t_product WHERE status = 2 ORDER BY create_time DESC")
     List<Product> selectListOnShelf();
 
-    @Select("SELECT * FROM t_product WHERE category_id = #{categoryId} AND status = 1 ORDER BY create_time DESC")
+    @Select("SELECT * FROM t_product WHERE category_id = #{categoryId} AND status = 2 ORDER BY create_time DESC")
     List<Product> selectByCategoryId(Long categoryId);
 
-    @Select("SELECT * FROM t_product WHERE name LIKE CONCAT('%', #{keyword}, '%') AND status = 1")
+    @Select("SELECT * FROM t_product WHERE name LIKE CONCAT('%', #{keyword}, '%') AND status = 2")
     List<Product> search(String keyword);
 }

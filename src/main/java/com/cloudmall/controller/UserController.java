@@ -9,6 +9,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 /**
  * 用户控制器 — MVC架构:
  * - 页面路由(Thymeleaf) + API接口(JSON) 共存
@@ -36,24 +38,26 @@ public class UserController {
     // ==================== API（返回JSON） ====================
 
     /**
-     * 注册API — MVC三层示范
+     * 注册API — 接收JSON body
      */
     @PostMapping("/api/user/register")
     @ResponseBody
-    public R<String> apiRegister(@RequestParam String phone,
-                                  @RequestParam String password,
-                                  @RequestParam String nickname) {
-        return userService.register(phone, password, nickname);
+    public R<String> apiRegister(@RequestBody Map<String, Object> body) {
+        return userService.register(
+                (String) body.get("phone"),
+                (String) body.get("password"),
+                (String) body.get("nickname"));
     }
 
     /**
-     * 登录API — MVC三层示范
+     * 登录API — 接收JSON body
      */
     @PostMapping("/api/user/login")
     @ResponseBody
-    public R<String> apiLogin(@RequestParam String phone,
-                               @RequestParam String password) {
-        return userService.login(phone, password);
+    public R<String> apiLogin(@RequestBody Map<String, Object> body) {
+        return userService.login(
+                (String) body.get("phone"),
+                (String) body.get("password"));
     }
 
     /**

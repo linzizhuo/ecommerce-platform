@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pkill -f \"CloudMallApplication\")",
+      "Bash(mvn spring-boot:run)",
+      "Bash(disown)",
+      "Read(//tmp/**)",
+      "Bash(nohup mvn spring-boot:run)",
+      "Bash(echo \"PID=$!\")",
+      "Bash(ps -p 3301 -o pid,stat,time)",
+      "Bash(python3 -c ' *)",
+      "Bash(mysql -h 192.168.0.181 -u root -p123456 -e \"SELECT 1\")",
+      "Bash(docker --version)",
+      "Bash(mysql -h 192.168.31.95 -u root -p123456 -e \"SELECT 1\")",
+      "Bash(mysql -h 192.168.31.95 -u root -p123456)",
+      "Bash(pkill -f \"CloudMallApplication\" 2>/dev/null; sleep 1 *)",
+      "Bash(git add *)"
+    ],
+    "additionalDirectories": [
+      "/tmp"
+    ]
+  }
+}
