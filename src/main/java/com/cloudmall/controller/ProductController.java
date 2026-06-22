@@ -3,9 +3,7 @@ package com.cloudmall.controller;
 import com.cloudmall.entity.Category;
 import com.cloudmall.entity.Product;
 import com.cloudmall.entity.Sku;
-import com.cloudmall.mapper.CategoryMapper;
-import com.cloudmall.mapper.ProductMapper;
-import com.cloudmall.mapper.SkuMapper;
+import com.cloudmall.service.ProductService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -16,19 +14,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.util.List;
 
 /**
- * 商品控制器 — MV架构: Controller直接调用Mapper, 无Service层
+ * 商品控制器 — MVC架构: Controller调Service, 不直接碰Mapper
+ * 对比MV架构: Controller中 productMapper.xxx() → productService.xxx()
  */
 @Controller
 public class ProductController {
 
     @Resource
-    private ProductMapper productMapper;
-
-    @Resource
-    private SkuMapper skuMapper;
-
-    @Resource
-    private CategoryMapper categoryMapper;
+    private ProductService productService;
 
     /**
      * 商品列表页
@@ -37,17 +30,9 @@ public class ProductController {
     public String list(@RequestParam(required = false) Long categoryId,
                        @RequestParam(required = false) String keyword,
                        Model model) {
-        List<Product> products;
-        if (keyword != null && !keyword.isEmpty()) {
-            products = productMapper.search(keyword);
-        } else if (categoryId != null && categoryId > 0) {
-            products = productMapper.selectByCategoryId(categoryId);
-        } else {
-            products = productMapper.selectListOnShelf();
-        }
-
-        // 类目导航
-        List<Category> categories = categoryMapper.selectList(null);
+        // MVC: 业务逻辑在Service, Controller只负责传参+渲染
+        List<Product> products = productService.list(categoryId, keyword);
+        List<Category> categories = productService.getAllCategories();
 
         model.addAttribute("products", products);
         model.addAttribute("categories", categories);
@@ -61,12 +46,12 @@ public class ProductController {
      */
     @GetMapping("/product/{id}")
     public String detail(@PathVariable Long id, Model model) {
-        Product product = productMapper.selectById(id);
+        Product product = productService.getById(id);
         if (product == null) {
             return "error/404";
         }
-        List<Sku> skuList = skuMapper.selectByProductId(id);
-        List<Category> categories = categoryMapper.selectList(null);
+        List<Sku> skuList = productService.getSkuList(id);
+        List<Category> categories = productService.getAllCategories();
 
         model.addAttribute("product", product);
         model.addAttribute("skuList", skuList);

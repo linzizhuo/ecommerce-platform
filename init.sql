@@ -59,6 +59,22 @@ CREATE TABLE t_user (
     UNIQUE INDEX idx_phone (phone)
 ) COMMENT '用户';
 
+-- ---------- 收货地址表 (MVC新增) ----------
+DROP TABLE IF EXISTS t_user_address;
+CREATE TABLE t_user_address (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL COMMENT '用户ID',
+    receiver VARCHAR(50) NOT NULL COMMENT '收货人',
+    phone VARCHAR(20) NOT NULL COMMENT '联系电话',
+    province VARCHAR(50) COMMENT '省',
+    city VARCHAR(50) COMMENT '市',
+    district VARCHAR(50) COMMENT '区',
+    detail VARCHAR(200) COMMENT '详细地址',
+    is_default INT DEFAULT 0 COMMENT '是否默认',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user_id (user_id)
+) COMMENT '收货地址';
+
 -- ========== 示例数据 ==========
 
 -- 商品类目
