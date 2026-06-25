@@ -10,7 +10,7 @@
       <!-- 我的优惠券 -->
       <el-card style="margin-bottom:20px">
         <template #header><span>🎫 我的优惠券 ({{ myCoupons.length }})</span>
-          <el-button size="small" type="danger" style="float:right" @click="showReceive=true">领券中心</el-button>
+          <el-button size="small" type="danger" style="float:right" @click="openReceive">领券中心</el-button>
         </template>
         <div v-if="myCoupons.length" style="display:flex;gap:12px;flex-wrap:wrap">
           <div v-for="c in myCoupons" :key="c.id" class="coupon-card" :class="{used:c.status!==0}">
@@ -75,6 +75,7 @@ async function loadAddr() { const r:any = await request.get('/address'); address
 async function saveAddr() { await request.post('/address', addr); ElMessage.success('已保存'); addrVisible.value=false; loadAddr() }
 async function loadMyCoupons() { try { const r:any = await request.get('/coupon/my'); myCoupons.value=r.data||[] } catch{} }
 async function loadAvail() { try { const r:any = await request.get('/coupon/available'); availCoupons.value=r.data||[] } catch{} }
+function openReceive() { showReceive.value = true; loadAvail() }
 async function receiveCoupon(id:number) {
   await request.post(`/coupon/receive/${id}`); ElMessage.success('领取成功'); loadMyCoupons(); loadAvail()
 }
