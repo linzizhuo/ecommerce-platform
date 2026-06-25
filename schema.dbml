@@ -1,140 +1,73 @@
-// CloudMall 高并发电商系统 - 数据库ER图
-// 粘贴到 https://dbdiagram.io 即可生成ER图
-
-Table t_user {
-  id bigint [pk, increment]
-  phone varchar(20) [unique, not null, note: '手机号']
-  password varchar(200) [not null, note: 'BCrypt加密']
-  nickname varchar(50)
-  avatar varchar(500)
-  status int [default: 1, note: '0禁用 1正常']
-  create_time datetime [default: `now()`]
-}
-
-Table t_user_address {
-  id bigint [pk, increment]
-  user_id bigint [not null, ref: > t_user.id]
-  receiver varchar(50) [not null, note: '收货人']
-  phone varchar(20) [not null]
-  province varchar(50)
-  city varchar(50)
-  district varchar(50)
-  detail varchar(200)
-  is_default int [default: 0]
-  create_time datetime [default: `now()`]
-}
-
-Table t_merchant {
-  id bigint [pk, increment]
-  user_id bigint [ref: > t_user.id, note: '关联用户ID']
-  shop_name varchar(100) [not null]
-  logo varchar(500)
-  status int [default: 0, note: '0待审 1通过 2驳回']
-  create_time datetime [default: `now()`]
-}
+// CloudMall 数据库 ER 图
+// 粘贴到 https://dbdiagram.io → 自动生成ER图
 
 Table t_admin_user {
-  id bigint [pk, increment]
-  username varchar(50) [unique, not null]
+  id bigint [pk, increment, not null]
+  username varchar(50) [not null, unique]
   password varchar(200) [not null]
-  status int [default: 1]
-  create_time datetime [default: `now()`]
+  status int [default: "1"]
+  create_time datetime
 }
 
-Table t_role {
-  id bigint [pk, increment]
-  role_name varchar(50) [not null]
-  role_code varchar(50) [unique, not null]
-  description varchar(200)
-}
-
-Table t_permission {
-  id bigint [pk, increment]
-  perm_name varchar(50) [not null]
-  perm_code varchar(100) [not null]
-  parent_id bigint [default: 0, ref: > t_permission.id]
-  type int [default: 1, note: '1菜单 2按钮']
-  sort int [default: 0]
-}
-
-Table t_role_permission {
-  id bigint [pk, increment]
-  role_id bigint [not null, ref: > t_role.id]
-  perm_id bigint [not null, ref: > t_permission.id]
-}
-
-Table t_user_role {
-  id bigint [pk, increment]
+Table t_after_sale {
+  id bigint [pk, increment, not null]
+  order_id bigint [not null, ref: > t_order.id]
   user_id bigint [not null, ref: > t_user.id]
-  role_id bigint [not null, ref: > t_role.id]
+  type int [not null] [note: "1退款 2退货退款 3换货"]
+  reason varchar(500)
+  amount int
+  status int [default: "0"] [note: "0待审 1通过 2驳回 3完成"]
+  create_time datetime
 }
 
 Table t_category {
-  id bigint [pk, increment]
-  name varchar(50) [not null, note: '类目名称']
-  parent_id bigint [default: 0, ref: > t_category.id, note: '父类目']
-  level int [default: 1, note: '层级']
-  sort int [default: 0]
+  id bigint [pk, increment, not null]
+  name varchar(50) [not null]
+  parent_id bigint [default: "0"]
+  level int [default: "1"]
+  sort int [default: "0"]
 }
 
-Table t_product {
-  id bigint [pk, increment]
-  merchant_id bigint [ref: > t_merchant.id, note: '商家ID']
-  category_id bigint [ref: > t_category.id, note: '类目ID']
-  name varchar(200) [not null]
-  description text
-  brand varchar(100)
-  status int [default: 0, note: '0草稿 1待审 2上架 3下架']
-  main_image varchar(500)
-  create_time datetime [default: `now()`]
+Table t_coupon_template {
+  id bigint [pk, increment, not null]
+  merchant_id bigint [ref: > t_merchant.id]
+  name varchar(100) [not null] [note: "优惠券名称"]
+  type int [default: "1"] [note: "1满减券 2折扣券"]
+  threshold int [default: "0"] [note: "使用门槛(分)"]
+  value int [not null] [note: "优惠值(分)"]
+  total_count int [default: "0"]
+  received_count int [default: "0"]
+  start_time datetime
+  end_time datetime
+  create_time datetime
 }
 
-Table t_sku {
-  id bigint [pk, increment]
-  product_id bigint [not null, ref: > t_product.id]
-  spec_info varchar(200) [note: '规格JSON {"颜色":"黑","容量":"256GB"}']
-  price int [not null, note: '价格(分)']
-  original_price int [note: '原价(分)']
-  image varchar(500)
-  stock int [default: 0]
-}
-
-Table t_product_image {
-  id bigint [pk, increment]
-  product_id bigint [not null, ref: > t_product.id]
-  url varchar(500) [not null]
-  sort int [default: 0]
-  type int [default: 1, note: '1主图 2详情图']
-}
-
-Table t_review {
-  id bigint [pk, increment]
-  user_id bigint [not null, ref: > t_user.id]
-  product_id bigint [not null, ref: > t_product.id]
-  order_id bigint [ref: > t_order.id]
-  rating int [default: 5]
-  content text
-  images varchar(1000) [note: '图片JSON']
-  create_time datetime [default: `now()`]
+Table t_merchant {
+  id bigint [pk, increment, not null]
+  user_id bigint [ref: > t_user.id] [note: "关联用户ID"]
+  shop_name varchar(100) [not null]
+  logo varchar(500)
+  status int [default: "0"] [note: "0待审 1通过 2驳回"]
+  create_time datetime
 }
 
 Table t_order {
-  id bigint [pk, increment]
-  order_no varchar(30) [unique, not null, note: '订单号']
+  id bigint [pk, increment, not null]
+  order_no varchar(30) [not null, unique] [note: "订单号"]
   user_id bigint [not null, ref: > t_user.id]
-  merchant_id bigint [ref: > t_merchant.id]
-  total_amount int [not null, note: '总金额(分)']
-  discount_amount int [default: 0, note: '优惠金额(分)']
-  pay_amount int [not null, note: '实付(分)']
-  status int [default: 0, note: '0待付 1已付 2已发 3完成 4取消 5退款中 6已退款']
-  coupon_id bigint [ref: > t_user_coupon.id]
-  address_snapshot varchar(1000) [note: '地址快照JSON']
+  merchant_id bigint
+  total_amount int [not null] [note: "总金额(分)"]
+  discount_amount int [default: "0"] [note: "优惠金额(分)"]
+  pay_amount int [not null] [note: "实付(分)"]
+  status int [default: "0"] [note: "0待付 1已付/待发 2已发货 3已完成 4已取消 5退款中 6已退款"]
+  coupon_id bigint
+  address_snapshot varchar(1000) [note: "地址快照JSON"]
   pay_time datetime
-  create_time datetime [default: `now()`]
+  create_time datetime
 }
 
 Table t_order_item {
-  id bigint [pk, increment]
+  id bigint [pk, increment, not null]
   order_id bigint [not null, ref: > t_order.id]
   sku_id bigint [not null, ref: > t_sku.id]
   product_name varchar(200)
@@ -145,77 +78,143 @@ Table t_order_item {
 }
 
 Table t_payment {
-  id bigint [pk, increment]
+  id bigint [pk, increment, not null]
   order_id bigint [not null, ref: > t_order.id]
-  pay_no varchar(50) [unique, not null]
+  pay_no varchar(50) [not null, unique]
   amount int [not null]
-  pay_method int [default: 1, note: '1支付宝 2微信']
-  status int [default: 0, note: '0待支付 1已支付']
+  pay_method int [default: "1"] [note: "1支付宝 2微信"]
+  status int [default: "0"] [note: "0待支付 1已支付"]
   pay_time datetime
 }
 
-Table t_after_sale {
-  id bigint [pk, increment]
-  order_id bigint [not null, ref: > t_order.id]
-  user_id bigint [not null, ref: > t_user.id]
-  type int [not null, note: '1退款 2退货退款 3换货']
-  reason varchar(500)
-  amount int
-  status int [default: 0, note: '0待审 1通过 2驳回 3完成']
-  create_time datetime [default: `now()`]
+Table t_permission {
+  id bigint [pk, increment, not null]
+  perm_name varchar(50) [not null]
+  perm_code varchar(100) [not null]
+  parent_id bigint [default: "0"]
+  type int [default: "1"] [note: "1菜单 2按钮"]
+  sort int [default: "0"]
 }
 
-Table t_coupon_template {
-  id bigint [pk, increment]
-  merchant_id bigint [ref: > t_merchant.id]
-  name varchar(100) [not null, note: '优惠券名称']
-  type int [default: 1, note: '1满减券 2折扣券']
-  threshold int [default: 0, note: '使用门槛(分)']
-  value int [not null, note: '满减=减免金额 折扣=折扣率(85=8.5折)']
-  total_count int [default: 0, note: '发行总量']
-  received_count int [default: 0, note: '已领取']
-  start_time datetime
-  end_time datetime
-  create_time datetime [default: `now()`]
+Table t_product {
+  id bigint [pk, increment, not null]
+  merchant_id bigint [ref: > t_merchant.id] [note: "商家ID"]
+  category_id bigint [ref: > t_category.id]
+  name varchar(200) [not null]
+  description text
+  brand varchar(100)
+  status int [default: "0"] [note: "0草稿 1待审 2已上架 3已下架"]
+  main_image varchar(500)
+  create_time datetime
 }
 
-Table t_user_coupon {
-  id bigint [pk, increment]
+Table t_product_image {
+  id bigint [pk, increment, not null]
+  product_id bigint [not null]
+  url varchar(500) [not null]
+  sort int [default: "0"]
+  type int [default: "1"] [note: "1主图 2详情图"]
+}
+
+Table t_review {
+  id bigint [pk, increment, not null]
   user_id bigint [not null, ref: > t_user.id]
-  template_id bigint [not null, ref: > t_coupon_template.id]
-  status int [default: 0, note: '0未使用 1已使用 2已过期']
-  expire_time datetime
-  create_time datetime [default: `now()`]
+  product_id bigint [not null, ref: > t_product.id]
+  order_id bigint [ref: > t_order.id]
+  rating int [default: "5"]
+  content text
+  images varchar(1000) [note: "图片JSON"]
+  create_time datetime
+}
+
+Table t_role {
+  id bigint [pk, increment, not null]
+  role_name varchar(50) [not null]
+  role_code varchar(50) [not null, unique]
+  description varchar(200)
+}
+
+Table t_role_permission {
+  id bigint [pk, increment, not null]
+  role_id bigint [not null]
+  perm_id bigint [not null]
 }
 
 Table t_seckill_session {
-  id bigint [pk, increment]
+  id bigint [pk, increment, not null]
   sku_id bigint [not null, ref: > t_sku.id]
-  seckill_price int [not null, note: '秒杀价(分)']
-  stock int [not null, note: '秒杀库存']
+  seckill_price int [not null] [note: "秒杀价(分)"]
+  stock int [not null] [note: "秒杀库存"]
   start_time datetime [not null]
   end_time datetime [not null]
-  status int [default: 0, note: '0未开始 1进行中 2已结束']
-  create_time datetime [default: `now()`]
+  status int [default: "0"] [note: "0未开始 1进行中 2已结束"]
+  create_time datetime
+}
+
+Table t_sku {
+  id bigint [pk, increment, not null]
+  product_id bigint [not null, ref: > t_product.id]
+  spec_info varchar(200) [note: "规格JSON"]
+  price int [not null] [note: "价格(分)"]
+  original_price int [note: "原价(分)"]
+  image varchar(500)
+  stock int [default: "0"]
+}
+
+Table t_user {
+  id bigint [pk, increment, not null]
+  phone varchar(20) [not null, unique] [note: "手机号"]
+  password varchar(200) [not null] [note: "密码(BCrypt)"]
+  nickname varchar(50) [note: "昵称"]
+  avatar varchar(500) [note: "头像"]
+  status int [default: "1"] [note: "0禁用 1正常"]
+  create_time datetime
+}
+
+Table t_user_address {
+  id bigint [pk, increment, not null]
+  user_id bigint [not null, ref: > t_user.id]
+  receiver varchar(50) [not null]
+  phone varchar(20) [not null]
+  province varchar(50)
+  city varchar(50)
+  district varchar(50)
+  detail varchar(200)
+  is_default int [default: "0"]
+  create_time datetime
+}
+
+Table t_user_coupon {
+  id bigint [pk, increment, not null]
+  user_id bigint [not null, ref: > t_user.id]
+  template_id bigint [not null, ref: > t_coupon_template.id]
+  status int [default: "0"] [note: "0未使用 1已使用 2已过期"]
+  expire_time datetime
+  create_time datetime
+}
+
+Table t_user_role {
+  id bigint [pk, increment, not null]
+  user_id bigint [not null]
+  role_id bigint [not null]
 }
 
 // ====== 关系汇总 ======
-// t_user 1:N t_user_address   用户有多个收货地址
-// t_user 1:N t_order          用户创建多个订单
-// t_user 1:N t_review         用户发表多条评价
-// t_user 1:N t_user_coupon    用户领取多张优惠券
-// t_user 1:N t_user_role      用户拥有多个角色
-// t_merchant 1:N t_product    商家发布多个商品
-// t_merchant 1:N t_coupon_template 商家创建多个优惠券
-// t_category 1:N t_product    类目包含多个商品
-// t_category 1:N t_category   类目自关联(父子)
-// t_product 1:N t_sku         商品有多个规格
-// t_product 1:N t_review      商品收到多条评价
-// t_product 1:N t_product_image 商品有多张图片
-// t_order 1:N t_order_item    订单包含多个明细
-// t_order 1:1 t_payment       订单对应一条支付
-// t_order 1:N t_after_sale    订单可有多次售后
-// t_coupon_template 1:N t_user_coupon 券模板被多人领取
-// t_sku 1:N t_seckill_session SKU参与秒杀
-// t_role N:N t_permission     角色-权限多对多(通过t_role_permission)
-// t_user N:N t_role           用户-角色多对多(通过t_user_role)
+// Ref: t_order.id < t_after_sale.order_id
+// Ref: t_user.id < t_after_sale.user_id
+// Ref: t_merchant.id < t_coupon_template.merchant_id
+// Ref: t_user.id < t_merchant.user_id
+// Ref: t_user.id < t_order.user_id
+// Ref: t_order.id < t_order_item.order_id
+// Ref: t_sku.id < t_order_item.sku_id
+// Ref: t_order.id < t_payment.order_id
+// Ref: t_category.id < t_product.category_id
+// Ref: t_merchant.id < t_product.merchant_id
+// Ref: t_order.id < t_review.order_id
+// Ref: t_product.id < t_review.product_id
+// Ref: t_user.id < t_review.user_id
+// Ref: t_sku.id < t_seckill_session.sku_id
+// Ref: t_product.id < t_sku.product_id
+// Ref: t_user.id < t_user_address.user_id
+// Ref: t_coupon_template.id < t_user_coupon.template_id
+// Ref: t_user.id < t_user_coupon.user_id
