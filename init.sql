@@ -252,7 +252,36 @@ CREATE TABLE t_seckill_session (
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP
 ) COMMENT '秒杀场次(阶段二使用)';
 
+-- ==================== 外键约束 ====================
+
+ALTER TABLE t_user_address ADD CONSTRAINT fk_addr_user FOREIGN KEY (user_id) REFERENCES t_user(id);
+ALTER TABLE t_merchant ADD CONSTRAINT fk_merchant_user FOREIGN KEY (user_id) REFERENCES t_user(id);
+ALTER TABLE t_product ADD CONSTRAINT fk_product_merchant FOREIGN KEY (merchant_id) REFERENCES t_merchant(id);
+ALTER TABLE t_product ADD CONSTRAINT fk_product_category FOREIGN KEY (category_id) REFERENCES t_category(id);
+ALTER TABLE t_sku ADD CONSTRAINT fk_sku_product FOREIGN KEY (product_id) REFERENCES t_product(id);
+ALTER TABLE t_review ADD CONSTRAINT fk_review_user FOREIGN KEY (user_id) REFERENCES t_user(id);
+ALTER TABLE t_review ADD CONSTRAINT fk_review_product FOREIGN KEY (product_id) REFERENCES t_product(id);
+ALTER TABLE t_review ADD CONSTRAINT fk_review_order FOREIGN KEY (order_id) REFERENCES t_order(id);
+ALTER TABLE t_order ADD CONSTRAINT fk_order_user FOREIGN KEY (user_id) REFERENCES t_user(id);
+ALTER TABLE t_order_item ADD CONSTRAINT fk_oi_order FOREIGN KEY (order_id) REFERENCES t_order(id);
+ALTER TABLE t_order_item ADD CONSTRAINT fk_oi_sku FOREIGN KEY (sku_id) REFERENCES t_sku(id);
+ALTER TABLE t_payment ADD CONSTRAINT fk_pay_order FOREIGN KEY (order_id) REFERENCES t_order(id);
+ALTER TABLE t_after_sale ADD CONSTRAINT fk_as_order FOREIGN KEY (order_id) REFERENCES t_order(id);
+ALTER TABLE t_after_sale ADD CONSTRAINT fk_as_user FOREIGN KEY (user_id) REFERENCES t_user(id);
+ALTER TABLE t_coupon_template ADD CONSTRAINT fk_ct_merchant FOREIGN KEY (merchant_id) REFERENCES t_merchant(id);
+ALTER TABLE t_user_coupon ADD CONSTRAINT fk_uc_user FOREIGN KEY (user_id) REFERENCES t_user(id);
+ALTER TABLE t_user_coupon ADD CONSTRAINT fk_uc_template FOREIGN KEY (template_id) REFERENCES t_coupon_template(id);
+ALTER TABLE t_seckill_session ADD CONSTRAINT fk_ss_sku FOREIGN KEY (sku_id) REFERENCES t_sku(id);
+
 -- ==================== 示例数据 ====================
+
+-- 测试用户 (密码都是123456的BCrypt)
+INSERT INTO t_user (phone, password, nickname) VALUES
+('13800001111', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '测试用户');
+
+-- 商家 (关联用户id=1)
+INSERT INTO t_merchant (user_id, shop_name, status) VALUES
+(1, 'CloudTech官方旗舰店', 1);
 
 -- 类目
 INSERT INTO t_category (name, parent_id, level, sort) VALUES
