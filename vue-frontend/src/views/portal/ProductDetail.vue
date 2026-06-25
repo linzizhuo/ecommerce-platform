@@ -2,6 +2,7 @@
   <div class="detail-page">
     <header class="top-bar"><div class="inner">
       <router-link to="/" class="logo">CloudMall</router-link>
+      <router-link to="/cart"><el-icon><ShoppingCart /></el-icon></router-link>
     </div></header>
     <div class="content" v-if="product">
       <div class="detail-layout">
