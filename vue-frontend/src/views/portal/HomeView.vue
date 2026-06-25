@@ -28,9 +28,12 @@
 
     <nav class="cat-nav">
       <div class="inner">
-        <el-button v-for="cat in topCats" :key="cat.id" :type="catId === cat.id ? 'danger' : 'default'" round
-          @click="catId = cat.id; loadProducts()">{{ cat.name }}</el-button>
         <el-button :type="!catId ? 'danger' : 'default'" round @click="catId = null; loadProducts()">🔥 全部</el-button>
+        <template v-for="cat in topCats" :key="cat.id">
+          <el-button :type="catId === cat.id ? 'danger' : 'default'" round @click="catId = cat.id; loadProducts()">{{ cat.name }}</el-button>
+          <el-button v-for="sub in subCats(cat.id)" :key="sub.id" :type="catId === sub.id ? 'danger' : ''" size="small" round
+            @click="catId = sub.id; loadProducts()" style="margin-right:4px">{{ sub.name }}</el-button>
+        </template>
       </div>
     </nav>
 
@@ -47,7 +50,7 @@
           </div>
           <div class="card-body">
             <h4>{{ p.name }}</h4>
-            <p class="brand">{{ p.brand }}</p>
+            <p class="brand">{{ p.brand }} · {{ catName(p.categoryId) }}</p>
             <div class="card-footer">
               <span class="card-price">¥{{ ((p.id * 3999 + 100) / 100).toFixed(0) }}起</span>
               <span class="card-sold">已售 {{ p.id * 37 + 100 }}</span>
@@ -86,10 +89,29 @@ const colors = ['linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
   'linear-gradient(135deg, #96fbc4 0%, #f9f586 100%)']
 
 const topCats = computed(() => categories.value.filter((c: any) => c.level === 1))
+function subCats(parentId: number) { return categories.value.filter((c: any) => c.parentId === parentId) }
+function catName(catId: number): string {
+  const c = categories.value.find((c: any) => c.id === catId)
+  return c ? c.name : ''
+}
 
 async function loadProducts() {
-  const res: any = await request.get('/product/list', { params: { keyword: keyword.value, categoryId: catId.value } })
-  products.value = res.data || []
+  // 获取所有相关类目ID(父类目+子类目)
+  let catIds: number[] = []
+  if (catId.value) {
+    catIds = [catId.value]
+    // 如果是父类目, 加入子类目
+    const children = categories.value.filter((c: any) => c.parentId === catId.value).map((c: any) => c.id)
+    catIds.push(...children)
+  }
+  const allProducts: any[] = []
+  for (const cid of catIds.length ? catIds : [null]) {
+    const res: any = await request.get('/product/list', { params: { keyword: keyword.value, categoryId: cid } })
+    if (res.data) allProducts.push(...res.data)
+  }
+  // 去重
+  const seen = new Set()
+  products.value = allProducts.filter((p: any) => { const ok = !seen.has(p.id); seen.add(p.id); return ok })
 }
 async function loadCategories() {
   const res: any = await request.get('/product/category/list')
