@@ -1,9 +1,9 @@
 <template>
   <div class="checkout-page">
-    <header class="top-bar"><div class="inner"><router-link to="/" class="logo">CloudMall</router-link></div></header>
-    <div class="inner">
+    <header class="top-bar"><div class="top-inner"><router-link to="/" class="logo">CloudMall</router-link></div></header>
+    <div class="content-inner">
       <h2>确认订单</h2>
-      <el-card style="margin-bottom:20px">
+      <el-card class="section">
         <template #header>收货地址</template>
         <el-radio-group v-model="addressId">
           <el-radio v-for="a in addresses" :key="a.id" :value="a.id" style="display:block;margin:5px 0">
@@ -11,7 +11,7 @@
           </el-radio>
         </el-radio-group>
       </el-card>
-      <el-card style="margin-bottom:20px">
+      <el-card class="section">
         <template #header>商品信息</template>
         <el-table :data="items">
           <el-table-column prop="productName" label="商品" />
@@ -20,36 +20,53 @@
           <el-table-column prop="quantity" label="数量" />
         </el-table>
       </el-card>
-      <el-card>
+      <el-card class="section">
+        <template #header>优惠券 <el-button size="small" text @click="loadCoupons">刷新</el-button></template>
+        <el-radio-group v-model="selectedCouponId">
+          <el-radio :value="null">不使用优惠券</el-radio>
+          <el-radio v-for="c in coupons" :key="c.id" :value="c.id" style="display:block;margin:3px 0">
+            {{ c.name }} - 满¥{{ (c.threshold/100).toFixed(0) }}减¥{{ (c.value/100).toFixed(0) }}
+          </el-radio>
+        </el-radio-group>
+        <p v-if="coupons.length===0" style="color:#999">暂无可用优惠券</p>
+      </el-card>
+      <el-card class="section">
         <template #header>支付方式</template>
         <el-radio-group v-model="payMethod">
           <el-radio :value="1">支付宝</el-radio>
           <el-radio :value="2">微信支付</el-radio>
         </el-radio-group>
       </el-card>
-      <div style="text-align:right;margin-top:20px">
-        <span style="font-size:20px;color:#ff4d4f">实付: ¥{{ total.toFixed(2) }}</span>
-        <el-button type="danger" size="large" style="margin-left:20px" @click="submitOrder" :loading="submitting">提交订单</el-button>
+      <div class="total-bar">
+        <span v-if="discount>0" style="color:#999">优惠: -¥{{ (discount/100).toFixed(2) }}</span>
+        <span class="total-price">实付: ¥{{ (total - discount).toFixed(2) }}</span>
+        <el-button type="danger" size="large" @click="submitOrder" :loading="submitting">提交订单</el-button>
       </div>
     </div>
   </div>
 </template>
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import request from '@/utils/request'
+import { ref, computed, onMounted } from 'vue'; import { useRouter } from 'vue-router'; import { ElMessage } from 'element-plus'; import request from '@/utils/request'
 const router = useRouter()
 const addresses = ref<any[]>([]); const addressId = ref<number|null>(null)
 const payMethod = ref(1); const items = ref<any[]>([]); const submitting = ref(false)
-const total = computed(() => items.value.reduce((s,i) => s + i.price * i.quantity, 0) / 100)
+const coupons = ref<any[]>([]); const selectedCouponId = ref<number|null>(null)
+const total = computed(() => items.value.reduce((s,i) => s + i.price * i.quantity, 0))
+const discount = computed(() => {
+  if (!selectedCouponId.value) return 0
+  const c = coupons.value.find(c => c.id === selectedCouponId.value)
+  return c ? c.value : 0
+})
 function fmtSpec(s: string): string { try { return Object.values(JSON.parse(s)).join(' / ') } catch { return s } }
+async function loadCoupons() {
+  try { const r:any = await request.get('/coupon/my'); coupons.value = r.data||[] } catch {}
+}
 async function submitOrder() {
   if (!addressId.value) { ElMessage.warning('请选择地址'); return }
   const addr = addresses.value.find(a => a.id === addressId.value)
   submitting.value = true
   try {
-    const res: any = await request.post('/order', { addressId: addressId.value, addressSnapshot: JSON.stringify(addr), payMethod: payMethod.value })
+    const res: any = await request.post('/order', { addressId: addressId.value, addressSnapshot: JSON.stringify(addr), payMethod: payMethod.value, couponId: selectedCouponId.value })
     await request.post(`/order/${res.data.orderId}/pay`, { payMethod: payMethod.value })
     ElMessage.success('支付成功!'); router.push('/orders')
   } finally { submitting.value = false }
@@ -57,7 +74,10 @@ async function submitOrder() {
 onMounted(async () => {
   const cached = localStorage.getItem('checkout_items')
   if (cached) items.value = JSON.parse(cached); else router.push('/cart')
-  try { const res: any = await request.get('/address'); addresses.value = res.data||[]; if (addresses.value.length) addressId.value = addresses.value[0].id } catch {}
+  try { const r:any = await request.get('/address'); addresses.value=r.data||[]; if (addresses.value.length) addressId.value=addresses.value[0].id } catch {}
+  loadCoupons()
 })
 </script>
-<style scoped>.checkout-page{min-height:100vh;background:#f5f5f5}.top-bar{background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.08)}.inner{max-width:800px;margin:0 auto;padding:20px}.logo{font-size:24px;font-weight:bold;color:#ff4d4f;text-decoration:none}</style>
+<style scoped>
+.checkout-page{min-height:100vh;background:#f0f2f5}.top-bar{background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.06)}.top-inner{display:flex;align-items:center;max-width:800px;margin:0 auto;padding:12px 20px}.content-inner{max-width:800px;margin:0 auto;padding:20px}.logo{font-size:22px;font-weight:700;color:#ff4d4f;text-decoration:none}.section{margin-bottom:16px}.total-bar{text-align:right;padding:20px;background:#fff;border-radius:8px;display:flex;justify-content:flex-end;align-items:center;gap:16px}.total-price{font-size:24px;color:#ff4d4f;font-weight:700}
+</style>
