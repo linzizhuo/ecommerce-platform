@@ -4,7 +4,7 @@
       <router-link to="/" class="logo">CloudMall</router-link>
       <router-link to="/cart">购物车</router-link>
     </div></header>
-    <div class="inner" v-if="product">
+    <div class="content" v-if="product">
       <div class="detail-layout">
         <div class="main-img"><div class="img-placeholder">{{ product.name?.charAt(0) }}</div></div>
         <div class="info">
@@ -83,8 +83,10 @@ onMounted(async () => {
 
 <style scoped>
 .detail-page { min-height: 100vh; background: #f5f5f5; }
-.top-bar { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-.inner { max-width: 1200px; margin: 0 auto; padding: 12px 20px; display: flex; align-items: center; gap: 20px; }
+.top-bar { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 12px 20px; }
+.top-bar .inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; gap: 20px; }
+.logo { font-size: 24px; font-weight: bold; color: #ff4d4f; text-decoration: none; }
+.content { max-width: 1200px; margin: 0 auto; padding: 20px; }
 .detail-layout { display: flex; gap: 40px; background: #fff; padding: 30px; border-radius: 8px; margin-top: 20px; }
 .main-img { width: 450px; }
 .img-placeholder { width: 100%; height: 400px; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; font-size: 80px; color: #fff; border-radius: 8px; }
