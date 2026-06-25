@@ -4,53 +4,84 @@
     <div class="content-inner">
       <h2>个人中心</h2>
       <el-card style="margin-bottom:20px">
-        <p>用户ID: {{ userStore.user?.id }}</p>
-        <p>手机号: {{ userStore.user?.phone }}</p>
-        <p>昵称: {{ userStore.user?.nickname }}</p>
+        <p>👤 {{ userStore.user?.nickname }} | 📱 {{ userStore.user?.phone }}</p>
       </el-card>
-      <el-card><template #header>收货地址</template>
-        <el-button @click="dialogVisible=true" type="primary" size="small">新增地址</el-button>
-        <el-table :data="addresses" style="margin-top:10px">
-          <el-table-column prop="receiver" label="收货人" />
-          <el-table-column prop="phone" label="电话" />
+
+      <!-- 我的优惠券 -->
+      <el-card style="margin-bottom:20px">
+        <template #header><span>🎫 我的优惠券 ({{ myCoupons.length }})</span>
+          <el-button size="small" type="danger" style="float:right" @click="showReceive=true">领券中心</el-button>
+        </template>
+        <div v-if="myCoupons.length" style="display:flex;gap:12px;flex-wrap:wrap">
+          <div v-for="c in myCoupons" :key="c.id" class="coupon-card" :class="{used:c.status!==0}">
+            <div class="coupon-value">¥{{ (c.value/100).toFixed(0) }}</div>
+            <div class="coupon-info">
+              <div>{{ c.name }}</div>
+              <small>满¥{{ (c.threshold/100).toFixed(0) }}可用</small>
+              <small v-if="c.status!==0" style="color:#999">已使用</small>
+            </div>
+          </div>
+        </div>
+        <el-empty v-else description="暂无优惠券，去领券中心看看吧" :image-size="60" />
+      </el-card>
+
+      <!-- 收货地址 -->
+      <el-card>
+        <template #header>📍 收货地址 <el-button size="small" @click="addrVisible=true" style="float:right">+ 新增</el-button></template>
+        <el-table :data="addresses">
+          <el-table-column prop="receiver" label="收货人" /><el-table-column prop="phone" label="电话" />
           <el-table-column label="地址"><template #default="{row}">{{ row.province }}{{ row.city }}{{ row.district }} {{ row.detail }}</template></el-table-column>
         </el-table>
       </el-card>
-      <!-- 地址弹窗 -->
-      <el-dialog v-model="dialogVisible" title="新增地址" width="500px">
-        <el-form>
-          <el-form-item label="收货人"><el-input v-model="addrForm.receiver" /></el-form-item>
-          <el-form-item label="电话"><el-input v-model="addrForm.phone" /></el-form-item>
-          <el-form-item label="省"><el-input v-model="addrForm.province" /></el-form-item>
-          <el-form-item label="市"><el-input v-model="addrForm.city" /></el-form-item>
-          <el-form-item label="区"><el-input v-model="addrForm.district" /></el-form-item>
-          <el-form-item label="详细地址"><el-input v-model="addrForm.detail" /></el-form-item>
+
+      <!-- 领券中心弹窗 -->
+      <el-dialog v-model="showReceive" title="🎫 领券中心" width="500px">
+        <div v-if="availCoupons.length">
+          <div v-for="c in availCoupons" :key="c.id" class="coupon-card receive" @click="receiveCoupon(c.id)">
+            <div class="coupon-value" style="color:#ff4d4f">¥{{ (c.value/100).toFixed(0) }}</div>
+            <div class="coupon-info">
+              <div>{{ c.name }}</div>
+              <small>满¥{{ (c.threshold/100).toFixed(0) }}可用 | 剩余{{ c.totalCount - (c.receivedCount||0) }}张</small>
+              <small style="color:#ff4d4f">点击领取</small>
+            </div>
+          </div>
+        </div>
+        <el-empty v-else description="暂无可领优惠券" :image-size="80" />
+      </el-dialog>
+
+      <!-- 新增地址弹窗 -->
+      <el-dialog v-model="addrVisible" title="新增地址" width="450px">
+        <el-form><el-form-item label="收货人"><el-input v-model="addr.receiver" /></el-form-item>
+          <el-form-item label="电话"><el-input v-model="addr.phone" /></el-form-item>
+          <el-form-item label="省"><el-input v-model="addr.province" /></el-form-item>
+          <el-form-item label="市"><el-input v-model="addr.city" /></el-form-item>
+          <el-form-item label="区"><el-input v-model="addr.district" /></el-form-item>
+          <el-form-item label="详细"><el-input v-model="addr.detail" /></el-form-item>
         </el-form>
-        <template #footer><el-button @click="dialogVisible=false">取消</el-button><el-button type="primary" @click="saveAddress">保存</el-button></template>
+        <template #footer><el-button @click="addrVisible=false">取消</el-button><el-button type="primary" @click="saveAddr">保存</el-button></template>
       </el-dialog>
     </div>
   </div>
 </template>
+
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue'
-import { ElMessage } from 'element-plus'
-import { useUserStore } from '@/stores/userStore'
-import request from '@/utils/request'
+import { ref, reactive, onMounted } from 'vue'; import { ElMessage } from 'element-plus'; import { useUserStore } from '@/stores/userStore'; import request from '@/utils/request'
 const userStore = useUserStore()
-const addresses = ref<any[]>([])
-const dialogVisible = ref(false)
-const addrForm = reactive({ receiver: '', phone: '', province: '', city: '', district: '', detail: '' })
-async function loadAddresses() { const res: any = await request.get('/address'); addresses.value = res.data || [] }
-async function saveAddress() {
-  await request.post('/address', addrForm)
-  ElMessage.success('保存成功')
-  dialogVisible.value = false
-  loadAddresses()
+const addresses = ref<any[]>([]); const addrVisible = ref(false)
+const myCoupons = ref<any[]>([]); const availCoupons = ref<any[]>([]); const showReceive = ref(false)
+const addr = reactive({ receiver:'', phone:'', province:'', city:'', district:'', detail:'' })
+
+async function loadAddr() { const r:any = await request.get('/address'); addresses.value=r.data||[] }
+async function saveAddr() { await request.post('/address', addr); ElMessage.success('已保存'); addrVisible.value=false; loadAddr() }
+async function loadMyCoupons() { try { const r:any = await request.get('/coupon/my'); myCoupons.value=r.data||[] } catch{} }
+async function loadAvail() { try { const r:any = await request.get('/coupon/available'); availCoupons.value=r.data||[] } catch{} }
+async function receiveCoupon(id:number) {
+  await request.post(`/coupon/receive/${id}`); ElMessage.success('领取成功'); loadMyCoupons(); loadAvail()
 }
-onMounted(() => { userStore.fetchUser(); loadAddresses() })
+onMounted(() => { userStore.fetchUser(); loadAddr(); loadMyCoupons() })
 </script>
-<style scoped>.page { min-height: 100vh; background: #f5f5f5; }
-.top-bar { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-.top-inner { display: flex; align-items: center; max-width: 900px; margin: 0 auto; padding: 12px 20px; }
-.content-inner { max-width: 900px; margin: 0 auto; padding: 20px; }
-.logo { font-size: 24px; font-weight: bold; color: #ff4d4f; text-decoration: none; }</style>
+
+<style scoped>
+.page{min-height:100vh;background:#f0f2f5}.top-bar{background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.06)}.top-inner{display:flex;align-items:center;max-width:900px;margin:0 auto;padding:12px 20px}.content-inner{max-width:900px;margin:0 auto;padding:20px}.logo{font-size:22px;font-weight:700;color:#ff4d4f;text-decoration:none}
+.coupon-card{display:flex;border:1px solid #f0f0f0;border-radius:8px;overflow:hidden;width:220px;cursor:pointer;transition:all .2s}.coupon-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.1)}.coupon-card.used{opacity:.5}.coupon-card.receive{border-color:#ff4d4f}.coupon-value{width:60px;background:#fff1f0;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700}.coupon-info{flex:1;padding:10px;font-size:13px;line-height:1.6}
+</style>
