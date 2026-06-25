@@ -2,7 +2,7 @@
   <div class="detail-page">
     <header class="top-bar"><div class="inner">
       <router-link to="/" class="logo">CloudMall</router-link>
-      <router-link to="/cart">购物车</router-link>
+      <router-link to="/cart"><el-icon><ShoppingCart /></el-icon> 购物车</router-link>
     </div></header>
     <div class="content" v-if="product">
       <div class="detail-layout">
@@ -35,6 +35,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { ShoppingCart } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { getProductDetail } from '@/api/product'
 import request from '@/utils/request'

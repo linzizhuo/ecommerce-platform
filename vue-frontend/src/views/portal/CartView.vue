@@ -1,6 +1,7 @@
 <template>
   <div class="cart-page">
-    <header class="top-bar"><div class="top-inner"><router-link to="/" class="logo">CloudMall</router-link></div></header>
+    <header class="top-bar"><div class="top-inner"><router-link to="/" class="logo">CloudMall</router-link>
+      <router-link to="/cart"><el-icon><ShoppingCart /></el-icon> 购物车</router-link></div></header>
     <div class="content-inner">
       <h2>购物车</h2>
       <el-table :data="items" style="width:100%" @selection-change="handleSelect">
