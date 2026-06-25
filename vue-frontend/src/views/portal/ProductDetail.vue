@@ -84,7 +84,7 @@ onMounted(async () => {
 <style scoped>
 .detail-page { min-height: 100vh; background: #f5f5f5; }
 .top-bar { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-.inner { max-width: 1200px; margin: 0 auto; padding: 20px; }
+.inner { max-width: 1200px; margin: 0 auto; padding: 12px 20px; display: flex; align-items: center; gap: 20px; }
 .detail-layout { display: flex; gap: 40px; background: #fff; padding: 30px; border-radius: 8px; margin-top: 20px; }
 .main-img { width: 450px; }
 .img-placeholder { width: 100%; height: 400px; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; font-size: 80px; color: #fff; border-radius: 8px; }

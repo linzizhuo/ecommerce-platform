@@ -1,7 +1,7 @@
 <template>
   <div class="cart-page">
-    <header class="top-bar"><div class="inner"><router-link to="/" class="logo">CloudMall</router-link></div></header>
-    <div class="inner">
+    <header class="top-bar"><div class="top-inner"><router-link to="/" class="logo">CloudMall</router-link></div></header>
+    <div class="content-inner">
       <h2>购物车</h2>
       <el-table :data="items" style="width:100%" @selection-change="handleSelect">
         <el-table-column type="selection" width="55" />
@@ -65,6 +65,7 @@ onMounted(loadCart)
 <style scoped>
 .cart-page { min-height: 100vh; background: #f5f5f5; }
 .top-bar { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-.inner { max-width: 1200px; margin: 0 auto; padding: 20px; }
+.top-inner { display: flex; align-items: center; max-width: 1200px; margin: 0 auto; padding: 12px 20px; }
+.content-inner { max-width: 1200px; margin: 0 auto; padding: 20px; }
 .logo { font-size: 24px; font-weight: bold; color: #ff4d4f; text-decoration: none; }
 </style>
