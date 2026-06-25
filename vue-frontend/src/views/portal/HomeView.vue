@@ -1,7 +1,7 @@
 <template>
   <div class="home">
     <header class="top-bar">
-      <div class="inner">
+      <div class="inner top-row">
         <router-link to="/" class="logo">CloudMall</router-link>
         <div class="search-bar">
           <el-input v-model="keyword" placeholder="搜索商品..." @keyup.enter="search" size="large">
@@ -23,7 +23,6 @@
       </div>
     </header>
 
-    <!-- 类目导航 -->
     <nav class="cat-nav">
       <div class="inner">
         <el-button v-for="cat in categories" :key="cat.id" :type="catId === cat.id ? 'danger' : ''"
@@ -32,20 +31,17 @@
       </div>
     </nav>
 
-    <!-- 商品网格 -->
-    <div class="inner product-area">
-      <el-row :gutter="16">
-        <el-col :span="6" v-for="p in products" :key="p.id">
-          <el-card :body-style="{ padding: '0' }" shadow="hover" class="product-card"
-            @click="$router.push(`/product/${p.id}`)">
-            <div class="img-box">{{ p.name?.charAt(0) }}</div>
-            <div class="info">
-              <h4>{{ p.name }}</h4>
-              <p class="brand">{{ p.brand }}</p>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
+    <div class="container product-area">
+      <div class="product-grid">
+        <el-card v-for="p in products" :key="p.id" shadow="hover" class="product-card"
+          @click="$router.push(`/product/${p.id}`)">
+          <div class="img-box">{{ p.name?.charAt(0) || '商' }}</div>
+          <div class="info">
+            <h4>{{ p.name }}</h4>
+            <p class="brand">{{ p.brand }}</p>
+          </div>
+        </el-card>
+      </div>
       <el-empty v-if="!products.length" description="暂无商品" />
     </div>
   </div>
@@ -71,7 +67,6 @@ async function loadCategories() {
   const res: any = await getCategories()
   categories.value = res.data || []
 }
-
 function search() { loadProducts() }
 
 onMounted(() => {
@@ -84,17 +79,25 @@ onMounted(() => {
 <style scoped>
 .home { background: #f5f5f5; min-height: 100vh; }
 .top-bar { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-.inner { max-width: 1200px; margin: 0 auto; padding: 12px 20px; display: flex; align-items: center; gap: 20px; }
-.logo { font-size: 24px; font-weight: bold; color: #ff4d4f; text-decoration: none; }
+.inner { max-width: 1200px; margin: 0 auto; padding: 12px 20px; }
+.top-row { display: flex; align-items: center; gap: 20px; }
+.logo { font-size: 24px; font-weight: bold; color: #ff4d4f; text-decoration: none; white-space: nowrap; }
 .search-bar { flex: 1; max-width: 500px; }
-.user-nav { display: flex; gap: 15px; white-space: nowrap; }
+.user-nav { display: flex; gap: 15px; white-space: nowrap; align-items: center; }
 .user-nav a { color: #666; text-decoration: none; cursor: pointer; }
-.cat-nav { background: #fff; padding: 10px 0; }
-.product-area { padding: 20px; }
-.product-card { cursor: pointer; transition: transform 0.2s; margin-bottom: 16px; }
+.cat-nav { background: #fff; padding: 8px 0; border-top: 1px solid #f0f0f0; }
+.container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+@media (max-width: 960px) { .product-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 640px) { .product-grid { grid-template-columns: repeat(2, 1fr); } }
+.product-card { cursor: pointer; transition: transform 0.2s; }
 .product-card:hover { transform: translateY(-3px); }
-.img-box { height: 180px; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; font-size: 48px; color: #fff; }
+.img-box { height: 180px; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; font-size: 48px; color: #fff; border-radius: 4px 4px 0 0; }
 .info { padding: 12px; }
-.info h4 { font-size: 14px; margin-bottom: 5px; }
+.info h4 { font-size: 14px; margin-bottom: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .brand { color: #999; font-size: 12px; }
 </style>
