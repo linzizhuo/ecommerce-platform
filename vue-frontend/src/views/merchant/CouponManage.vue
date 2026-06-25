@@ -1,20 +1,7 @@
 <template>
-  <div class="page">
-    <el-container>
-      <el-header style="background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.08);display:flex;align-items:center;justify-content:space-between">
-        <span style="font-size:20px;font-weight:bold;color:#1890ff">CloudMall 商家后台</span>
-        <div>
-          <router-link to="/merchant/dashboard" style="margin:0 10px">看板</router-link>
-          <router-link to="/merchant/products" style="margin:0 10px">商品</router-link>
-          <router-link to="/merchant/orders" style="margin:0 10px">订单</router-link>
-          <router-link to="/merchant/coupons" style="margin:0 10px">优惠券</router-link>
-          <el-button size="small" @click="$router.push('/')">回前台</el-button>
-        </div>
-      </el-header>
-      <el-main style="max-width:1200px;margin:20px auto">
-        <slot>商家后台</slot>
-      </el-main>
-    </el-container>
-  </div>
+  <div class="page"><el-container>
+    <el-header class="mh"><span>CloudMall 商家后台</span><div><router-link to="/merchant/dashboard">看板</router-link><router-link to="/merchant/products">商品</router-link><router-link to="/merchant/orders">订单</router-link><router-link to="/merchant/coupons">优惠券</router-link></div></el-header>
+    <el-main><h3>优惠券管理</h3><el-button type="primary">新建优惠券</el-button><el-empty description="暂无优惠券" style="margin-top:40px" /></el-main>
+  </el-container></div>
 </template>
-<style scoped>.page { min-height: 100vh; background: #f5f5f5; }</style>
+<style scoped>.page{min-height:100vh;background:#f5f5f5}.mh{background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;align-items:center;justify-content:space-between;font-size:20px;font-weight:bold;color:#1890ff;padding:0 20px}.mh a{margin:0 10px;color:#666;text-decoration:none;font-size:14px;font-weight:normal}.el-main{max-width:1200px;margin:20px auto}</style>

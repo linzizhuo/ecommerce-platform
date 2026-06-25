@@ -1,6 +1,4 @@
-<template><div>ProductList - Redirect to Home</div></template>
+<template><div><HomeView /></div></template>
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-onMounted(() => useRouter().push('/'))
+import HomeView from './HomeView.vue'
 </script>
