@@ -1,220 +1,311 @@
-// CloudMall 数据库 ER 图
-// 粘贴到 https://dbdiagram.io → 自动生成ER图
+// CloudMall 高并发电商系统 - 数据库ER图
+// 粘贴到 https://dbdiagram.io 即可生成ER图
+// Docs: https://dbml.dbdiagram.io/docs
 
-Table t_admin_user {
-  id bigint [pk, increment, not null]
-  username varchar(50) [not null, unique]
-  password varchar(200) [not null]
-  status int [default: "1"]
-  create_time datetime
-}
-
-Table t_after_sale {
-  id bigint [pk, increment, not null]
-  order_id bigint [not null, ref: > t_order.id]
-  user_id bigint [not null, ref: > t_user.id]
-  type int [not null] [note: "1退款 2退货退款 3换货"]
-  reason varchar(500)
-  amount int
-  status int [default: "0"] [note: "0待审 1通过 2驳回 3完成"]
-  create_time datetime
-}
-
-Table t_category {
-  id bigint [pk, increment, not null]
-  name varchar(50) [not null]
-  parent_id bigint [default: "0"]
-  level int [default: "1"]
-  sort int [default: "0"]
-}
-
-Table t_coupon_template {
-  id bigint [pk, increment, not null]
-  merchant_id bigint [ref: > t_merchant.id]
-  name varchar(100) [not null] [note: "优惠券名称"]
-  type int [default: "1"] [note: "1满减券 2折扣券"]
-  threshold int [default: "0"] [note: "使用门槛(分)"]
-  value int [not null] [note: "优惠值(分)"]
-  total_count int [default: "0"]
-  received_count int [default: "0"]
-  start_time datetime
-  end_time datetime
-  create_time datetime
-}
-
-Table t_merchant {
-  id bigint [pk, increment, not null]
-  user_id bigint [ref: > t_user.id] [note: "关联用户ID"]
-  shop_name varchar(100) [not null]
-  logo varchar(500)
-  status int [default: "0"] [note: "0待审 1通过 2驳回"]
-  create_time datetime
-}
-
-Table t_order {
-  id bigint [pk, increment, not null]
-  order_no varchar(30) [not null, unique] [note: "订单号"]
-  user_id bigint [not null, ref: > t_user.id]
-  merchant_id bigint
-  total_amount int [not null] [note: "总金额(分)"]
-  discount_amount int [default: "0"] [note: "优惠金额(分)"]
-  pay_amount int [not null] [note: "实付(分)"]
-  status int [default: "0"] [note: "0待付 1已付/待发 2已发货 3已完成 4已取消 5退款中 6已退款"]
-  coupon_id bigint
-  address_snapshot varchar(1000) [note: "地址快照JSON"]
-  pay_time datetime
-  create_time datetime
-}
-
-Table t_order_item {
-  id bigint [pk, increment, not null]
-  order_id bigint [not null, ref: > t_order.id]
-  sku_id bigint [not null, ref: > t_sku.id]
-  product_name varchar(200)
-  spec_info varchar(200)
-  price int [not null]
-  quantity int [not null]
-  product_image varchar(500)
-}
-
-Table t_payment {
-  id bigint [pk, increment, not null]
-  order_id bigint [not null, ref: > t_order.id]
-  pay_no varchar(50) [not null, unique]
-  amount int [not null]
-  pay_method int [default: "1"] [note: "1支付宝 2微信"]
-  status int [default: "0"] [note: "0待支付 1已支付"]
-  pay_time datetime
-}
-
-Table t_permission {
-  id bigint [pk, increment, not null]
-  perm_name varchar(50) [not null]
-  perm_code varchar(100) [not null]
-  parent_id bigint [default: "0"]
-  type int [default: "1"] [note: "1菜单 2按钮"]
-  sort int [default: "0"]
-}
-
-Table t_product {
-  id bigint [pk, increment, not null]
-  merchant_id bigint [ref: > t_merchant.id] [note: "商家ID"]
-  category_id bigint [ref: > t_category.id]
-  name varchar(200) [not null]
-  description text
-  brand varchar(100)
-  status int [default: "0"] [note: "0草稿 1待审 2已上架 3已下架"]
-  main_image varchar(500)
-  create_time datetime
-}
-
-Table t_product_image {
-  id bigint [pk, increment, not null]
-  product_id bigint [not null]
-  url varchar(500) [not null]
-  sort int [default: "0"]
-  type int [default: "1"] [note: "1主图 2详情图"]
-}
-
-Table t_review {
-  id bigint [pk, increment, not null]
-  user_id bigint [not null, ref: > t_user.id]
-  product_id bigint [not null, ref: > t_product.id]
-  order_id bigint [ref: > t_order.id]
-  rating int [default: "5"]
-  content text
-  images varchar(1000) [note: "图片JSON"]
-  create_time datetime
-}
-
-Table t_role {
-  id bigint [pk, increment, not null]
-  role_name varchar(50) [not null]
-  role_code varchar(50) [not null, unique]
-  description varchar(200)
-}
-
-Table t_role_permission {
-  id bigint [pk, increment, not null]
-  role_id bigint [not null]
-  perm_id bigint [not null]
-}
-
-Table t_seckill_session {
-  id bigint [pk, increment, not null]
-  sku_id bigint [not null, ref: > t_sku.id]
-  seckill_price int [not null] [note: "秒杀价(分)"]
-  stock int [not null] [note: "秒杀库存"]
-  start_time datetime [not null]
-  end_time datetime [not null]
-  status int [default: "0"] [note: "0未开始 1进行中 2已结束"]
-  create_time datetime
-}
-
-Table t_sku {
-  id bigint [pk, increment, not null]
-  product_id bigint [not null, ref: > t_product.id]
-  spec_info varchar(200) [note: "规格JSON"]
-  price int [not null] [note: "价格(分)"]
-  original_price int [note: "原价(分)"]
-  image varchar(500)
-  stock int [default: "0"]
-}
+// ==================== 用户与权限 ====================
 
 Table t_user {
-  id bigint [pk, increment, not null]
-  phone varchar(20) [not null, unique] [note: "手机号"]
-  password varchar(200) [not null] [note: "密码(BCrypt)"]
-  nickname varchar(50) [note: "昵称"]
-  avatar varchar(500) [note: "头像"]
-  status int [default: "1"] [note: "0禁用 1正常"]
-  create_time datetime
+  id integer [primary key]
+  phone varchar [unique, not null, note: '手机号']
+  password varchar [not null, note: 'BCrypt加密']
+  nickname varchar [note: '昵称']
+  avatar varchar [note: '头像']
+  status integer [note: '0禁用 1正常']
+  create_time timestamp
 }
 
 Table t_user_address {
-  id bigint [pk, increment, not null]
-  user_id bigint [not null, ref: > t_user.id]
-  receiver varchar(50) [not null]
-  phone varchar(20) [not null]
-  province varchar(50)
-  city varchar(50)
-  district varchar(50)
-  detail varchar(200)
-  is_default int [default: "0"]
-  create_time datetime
+  id integer [primary key]
+  user_id integer [not null]
+  receiver varchar [not null, note: '收货人']
+  phone varchar [not null]
+  province varchar
+  city varchar
+  district varchar
+  detail varchar
+  is_default integer
+  create_time timestamp
 }
 
-Table t_user_coupon {
-  id bigint [pk, increment, not null]
-  user_id bigint [not null, ref: > t_user.id]
-  template_id bigint [not null, ref: > t_coupon_template.id]
-  status int [default: "0"] [note: "0未使用 1已使用 2已过期"]
-  expire_time datetime
-  create_time datetime
+Table t_merchant {
+  id integer [primary key]
+  user_id integer [note: '关联用户ID']
+  shop_name varchar [not null, note: '店铺名称']
+  logo varchar
+  status integer [note: '0待审 1通过 2驳回']
+  create_time timestamp
+}
+
+Table t_admin_user {
+  id integer [primary key]
+  username varchar [unique, not null]
+  password varchar [not null]
+  status integer
+  create_time timestamp
+}
+
+Table t_role {
+  id integer [primary key]
+  role_name varchar [not null, note: '角色名']
+  role_code varchar [unique, not null, note: '角色编码']
+  description varchar
+}
+
+Table t_permission {
+  id integer [primary key]
+  perm_name varchar [not null, note: '权限名']
+  perm_code varchar [not null, note: '权限编码']
+  parent_id integer [note: '父权限ID']
+  type integer [note: '1菜单 2按钮']
+  sort integer
+}
+
+Table t_role_permission {
+  id integer [primary key]
+  role_id integer [not null]
+  perm_id integer [not null]
 }
 
 Table t_user_role {
-  id bigint [pk, increment, not null]
-  user_id bigint [not null]
-  role_id bigint [not null]
+  id integer [primary key]
+  user_id integer [not null]
+  role_id integer [not null]
 }
 
-// ====== 关系汇总 ======
-// Ref: t_order.id < t_after_sale.order_id
-// Ref: t_user.id < t_after_sale.user_id
-// Ref: t_merchant.id < t_coupon_template.merchant_id
-// Ref: t_user.id < t_merchant.user_id
-// Ref: t_user.id < t_order.user_id
-// Ref: t_order.id < t_order_item.order_id
-// Ref: t_sku.id < t_order_item.sku_id
-// Ref: t_order.id < t_payment.order_id
-// Ref: t_category.id < t_product.category_id
-// Ref: t_merchant.id < t_product.merchant_id
-// Ref: t_order.id < t_review.order_id
-// Ref: t_product.id < t_review.product_id
-// Ref: t_user.id < t_review.user_id
-// Ref: t_sku.id < t_seckill_session.sku_id
-// Ref: t_product.id < t_sku.product_id
-// Ref: t_user.id < t_user_address.user_id
-// Ref: t_coupon_template.id < t_user_coupon.template_id
-// Ref: t_user.id < t_user_coupon.user_id
+// ==================== 商品 ====================
+
+Table t_category {
+  id integer [primary key]
+  name varchar [not null, note: '类目名称']
+  parent_id integer [note: '父类目ID']
+  level integer [note: '层级']
+  sort integer
+}
+
+Table t_product {
+  id integer [primary key]
+  merchant_id integer [note: '商家ID']
+  category_id integer [note: '类目ID']
+  name varchar [not null, note: '商品名称']
+  description text [note: '商品描述']
+  brand varchar [note: '品牌']
+  status integer [note: '0草稿 1待审 2上架 3下架']
+  main_image varchar
+  create_time timestamp
+}
+
+Table t_sku {
+  id integer [primary key]
+  product_id integer [not null]
+  spec_info varchar [note: '规格JSON']
+  price integer [not null, note: '价格(分)']
+  original_price integer [note: '原价(分)']
+  image varchar
+  stock integer
+}
+
+Table t_product_image {
+  id integer [primary key]
+  product_id integer [not null]
+  url varchar [not null]
+  sort integer
+  type integer [note: '1主图 2详情图']
+}
+
+Table t_review {
+  id integer [primary key]
+  user_id integer [not null]
+  product_id integer [not null]
+  order_id integer
+  rating integer [note: '评分1-5']
+  content text [note: '评价内容']
+  images varchar [note: '图片JSON']
+  create_time timestamp
+}
+
+// ==================== 订单与交易 ====================
+
+Table t_order {
+  id integer [primary key]
+  order_no varchar [unique, not null, note: '订单号']
+  user_id integer [not null]
+  merchant_id integer
+  total_amount integer [not null, note: '总金额(分)']
+  discount_amount integer [note: '优惠金额(分)']
+  pay_amount integer [not null, note: '实付(分)']
+  status integer [note: '0待付 1已付 2已发 3完成 4取消 5退款中 6已退款']
+  coupon_id integer
+  address_snapshot varchar [note: '地址快照JSON']
+  pay_time timestamp
+  create_time timestamp
+}
+
+Table t_order_item {
+  id integer [primary key]
+  order_id integer [not null]
+  sku_id integer [not null]
+  product_name varchar [note: '商品名称快照']
+  spec_info varchar [note: '规格快照']
+  price integer [not null, note: '成交价(分)']
+  quantity integer [not null, note: '数量']
+  product_image varchar
+}
+
+Table t_payment {
+  id integer [primary key]
+  order_id integer [not null]
+  pay_no varchar [unique, not null, note: '支付流水号']
+  amount integer [not null, note: '支付金额(分)']
+  pay_method integer [note: '1支付宝 2微信']
+  status integer [note: '0待支付 1已支付']
+  pay_time timestamp
+}
+
+Table t_after_sale {
+  id integer [primary key]
+  order_id integer [not null]
+  user_id integer [not null]
+  type integer [not null, note: '1退款 2退货退款 3换货']
+  reason varchar
+  amount integer [note: '退款金额(分)']
+  status integer [note: '0待审 1通过 2驳回 3完成']
+  create_time timestamp
+}
+
+// ==================== 营销 ====================
+
+Table t_coupon_template {
+  id integer [primary key]
+  merchant_id integer
+  name varchar [not null, note: '优惠券名称']
+  type integer [note: '1满减券 2折扣券']
+  threshold integer [note: '使用门槛(分)']
+  value integer [not null, note: '优惠值(分)']
+  total_count integer [note: '发行总量']
+  received_count integer [note: '已领取']
+  start_time timestamp
+  end_time timestamp
+  create_time timestamp
+}
+
+Table t_user_coupon {
+  id integer [primary key]
+  user_id integer [not null]
+  template_id integer [not null]
+  status integer [note: '0未使用 1已使用 2已过期']
+  expire_time timestamp
+  create_time timestamp
+}
+
+Table t_seckill_session {
+  id integer [primary key]
+  sku_id integer [not null]
+  seckill_price integer [not null, note: '秒杀价(分)']
+  stock integer [not null, note: '秒杀库存']
+  start_time timestamp [not null]
+  end_time timestamp [not null]
+  status integer [note: '0未开始 1进行中 2已结束']
+  create_time timestamp
+}
+
+// ==================== 外键关系 ====================
+
+// 用户体系
+Ref: t_user_address.user_id > t_user.id
+Ref: t_merchant.user_id > t_user.id
+Ref: t_user_role.user_id > t_user.id
+Ref: t_user_role.role_id > t_role.id
+Ref: t_role_permission.role_id > t_role.id
+Ref: t_role_permission.perm_id > t_permission.id
+Ref: t_permission.parent_id > t_permission.id
+
+// 商品体系
+Ref: t_product.merchant_id > t_merchant.id
+Ref: t_product.category_id > t_category.id
+Ref: t_category.parent_id > t_category.id
+Ref: t_sku.product_id > t_product.id
+Ref: t_product_image.product_id > t_product.id
+
+// 评价
+Ref: t_review.user_id > t_user.id
+Ref: t_review.product_id > t_product.id
+Ref: t_review.order_id > t_order.id
+
+// 订单体系
+Ref: t_order.user_id > t_user.id
+Ref: t_order.merchant_id > t_merchant.id
+Ref: t_order.coupon_id > t_user_coupon.id
+Ref: t_order_item.order_id > t_order.id
+Ref: t_order_item.sku_id > t_sku.id
+Ref: t_payment.order_id > t_order.id
+Ref: t_after_sale.order_id > t_order.id
+Ref: t_after_sale.user_id > t_user.id
+
+// 营销体系
+Ref: t_coupon_template.merchant_id > t_merchant.id
+Ref: t_user_coupon.user_id > t_user.id
+Ref: t_user_coupon.template_id > t_coupon_template.id
+Ref: t_seckill_session.sku_id > t_sku.id
+
+// ==================== 示例数据 ====================
+
+Records t_user(id, phone, nickname, status) {
+  1, '13800001111', '测试用户', 1
+}
+
+Records t_admin_user(id, username, status) {
+  1, 'admin', 1
+}
+
+Records t_role(id, role_name, role_code) {
+  1, '超级管理员', 'ROLE_SUPER_ADMIN'
+  2, '商家', 'ROLE_MERCHANT'
+  3, '普通用户', 'ROLE_USER'
+}
+
+Records t_merchant(id, user_id, shop_name, status) {
+  1, 1, 'CloudTech官方旗舰店', 1
+}
+
+Records t_category(id, name, parent_id, level, sort) {
+  1, '手机数码', 0, 1, 1
+  2, '电脑办公', 0, 1, 2
+  3, '家用电器', 0, 1, 3
+  4, '服饰鞋包', 0, 1, 4
+  5, '手机', 1, 2, 1
+  6, '平板', 1, 2, 2
+  7, '笔记本', 2, 2, 1
+  8, '台式机', 2, 2, 2
+  9, '空调', 3, 2, 1
+  10, '洗衣机', 3, 2, 2
+  11, '男装', 4, 2, 1
+  12, '女装', 4, 2, 2
+}
+
+Records t_product(id, merchant_id, category_id, name, brand, status) {
+  1, 1, 5, 'CloudPhone X1 5G智能手机', 'CloudTech', 2
+  2, 1, 5, 'CloudPhone SE 青春版', 'CloudTech', 2
+  3, 1, 5, 'SpeedMate 旗舰手机', 'SpeedMate', 2
+  4, 1, 7, 'ThinkBook Pro 16 轻薄本', 'ThinkBook', 2
+  5, 1, 7, 'MateBook 14 办公本', 'MateBook', 2
+  6, 1, 9, 'CoolAir 变频空调 1.5匹', 'CoolAir', 2
+  7, 1, 11, '商务休闲夹克 春秋款', 'MensWear', 2
+  8, 1, 12, '法式复古连衣裙', 'LadyStyle', 2
+}
+
+Records t_sku(id, product_id, spec_info, price, original_price, stock) {
+  1, 1, '曜石黑 256GB', 399900, 429900, 100
+  2, 1, '曜石黑 512GB', 449900, 479900, 80
+  3, 1, '星云蓝 256GB', 399900, 429900, 60
+  4, 1, '星云蓝 512GB', 449900, 479900, 50
+  5, 2, '薄荷绿 128GB', 199900, 219900, 200
+  6, 2, '深空灰 128GB', 199900, 219900, 150
+  7, 3, '陶瓷白 256GB', 499900, 529900, 50
+  8, 4, '深空灰 16GB+1TB', 699900, 749900, 40
+  9, 4, '银色 32GB+1TB', 799900, 849900, 25
+  10, 5, '皓月银 16GB+512GB', 549900, 589900, 60
+  11, 6, '1.5匹 白色', 299900, 349900, 80
+  12, 7, '深蓝色 L', 39900, 59900, 150
+  13, 7, '卡其色 L', 39900, 59900, 100
+  14, 8, '碎花 M', 29900, 45900, 200
+}
