@@ -1,8 +1,6 @@
 <template>
   <div class="page">
-    <header class="top-bar"><div class="top-inner"><router-link to="/" class="logo">CloudMall</router-link>
-      <router-link to="/cart"><el-icon><ShoppingCart /></el-icon> 购物车</router-link>
-      <router-link to="/orders">我的订单</router-link></div></header>
+    <header class="top-bar"><div class="top-inner"><router-link to="/" class="logo">CloudMall</router-link></div></header>
     <div class="content-inner">
       <h2>个人中心</h2>
       <el-card style="margin-bottom:20px">
