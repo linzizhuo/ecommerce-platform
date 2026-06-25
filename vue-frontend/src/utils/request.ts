@@ -7,26 +7,28 @@ const request = axios.create({
   timeout: 10000
 })
 
-// 请求拦截器: 带token
 request.interceptors.request.use(config => {
   const token = localStorage.getItem('token')
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
 
-// 响应拦截器: 统一错误处理
 request.interceptors.response.use(
   res => {
     if (res.data.code === 401) {
       localStorage.removeItem('token')
       router.push('/login')
-      ElMessage.error('请先登录')
+      return Promise.reject(res.data)
+    }
+    if (res.data.code !== 200) {
+      ElMessage.error(res.data.message || '请求失败')
       return Promise.reject(res.data)
     }
     return res.data
   },
   err => {
-    ElMessage.error('网络错误')
+    const msg = err.response?.data?.message || err.message || '网络错误'
+    ElMessage.error(msg)
     return Promise.reject(err)
   }
 )

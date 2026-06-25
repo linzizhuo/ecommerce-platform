@@ -7,18 +7,14 @@ export const useUserStore = defineStore('user', () => {
   const user = ref<any>(null)
 
   async function login(phone: string, password: string) {
-    const res: any = await request.post('/user/login', { phone, password }, {
-      params: { phone, password }
-    })
+    const res: any = await request.post('/user/login', { phone, password })
     token.value = res.data
     localStorage.setItem('token', res.data)
     return res
   }
 
   async function register(phone: string, password: string, nickname: string) {
-    const res: any = await request.post('/user/register', null, {
-      params: { phone, password, nickname }
-    })
+    const res: any = await request.post('/user/register', { phone, password, nickname })
     token.value = res.data
     localStorage.setItem('token', res.data)
     return res
