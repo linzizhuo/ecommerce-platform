@@ -14,7 +14,7 @@
           <h4>规格选择</h4>
           <el-radio-group v-model="selectedSkuId">
             <el-radio-button v-for="sku in skuList" :key="sku.id" :value="sku.id">
-              {{ sku.specInfo }} - ¥{{ (sku.price / 100).toFixed(2) }}
+              {{ formatSpec(sku.specInfo) }} - ¥{{ (sku.price / 100).toFixed(2) }}
             </el-radio-button>
           </el-radio-group>
           <p v-if="selectedSku" class="price">¥{{ (selectedSku.price / 100).toFixed(2) }}
@@ -66,6 +66,10 @@ async function addToCart() {
 
 function buyNow() {
   addToCart().then(() => router.push('/cart'))
+}
+
+function formatSpec(spec: string): string {
+  try { return Object.values(JSON.parse(spec)).join(' / ') } catch { return spec }
 }
 
 onMounted(async () => {

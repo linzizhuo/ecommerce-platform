@@ -6,7 +6,7 @@
       <el-table :data="items" style="width:100%" @selection-change="handleSelect">
         <el-table-column type="selection" width="55" />
         <el-table-column prop="productName" label="商品" />
-        <el-table-column prop="specInfo" label="规格" width="150" />
+        <el-table-column label="规格" width="150"><template #default="{row}">{{ formatSpec(row.specInfo) }}</template></el-table-column>
         <el-table-column label="单价" width="120"><template #default="{row}">¥{{ (row.price/100).toFixed(2) }}</template></el-table-column>
         <el-table-column label="数量" width="150">
           <template #default="{row}">
@@ -56,6 +56,9 @@ async function loadCart() {
   items.value = res.data || []
 }
 
+function formatSpec(spec: string): string {
+  try { return Object.values(JSON.parse(spec)).join(' / ') } catch { return spec }
+}
 onMounted(loadCart)
 </script>
 
