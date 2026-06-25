@@ -56,7 +56,14 @@ public class OrderServiceImpl {
                 throw new BusinessException("优惠券不可用");
             CouponTemplate ct = couponTemplateMapper.selectById(uc.getTemplateId());
             if (ct != null && totalAmount >= ct.getThreshold()) {
-                discountAmount = ct.getValue();
+                if (ct.getType() != null && ct.getType() == 2) {
+                    // 折扣券: value=85表示8.5折, 优惠=总价*(100-value)/100
+                    discountAmount = totalAmount * (100 - ct.getValue()) / 100;
+                } else {
+                    // 满减券: value=减免金额
+                    discountAmount = ct.getValue();
+                }
+                if (discountAmount < 0) discountAmount = 0;
                 if (discountAmount > totalAmount) discountAmount = totalAmount;
             }
         }

@@ -72,6 +72,7 @@ public class CouponController {
             Map<String, Object> m = new HashMap<>();
             m.put("id", uc.getId()); m.put("templateId", uc.getTemplateId());
             m.put("name", ct != null ? ct.getName() : ""); m.put("status", uc.getStatus());
+            m.put("type", ct != null ? ct.getType() : 1);
             m.put("threshold", ct != null ? ct.getThreshold() : 0);
             m.put("value", ct != null ? ct.getValue() : 0);
             m.put("expireTime", uc.getExpireTime());

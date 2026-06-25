@@ -25,7 +25,10 @@
         <el-radio-group v-model="selectedCouponId">
           <el-radio :value="null">不使用优惠券</el-radio>
           <el-radio v-for="c in coupons" :key="c.id" :value="c.id" style="display:block;margin:3px 0">
-            {{ c.name }} - 满¥{{ (c.threshold/100).toFixed(0) }}减¥{{ (c.value/100).toFixed(0) }}
+            {{ c.name }} —
+            <template v-if="c.type===2">{{ (c.value/10).toFixed(1) }}折券</template>
+            <template v-else>满¥{{ (c.threshold/100).toFixed(0) }}减¥{{ (c.value/100).toFixed(0) }}</template>
+            <span v-if="total < c.threshold" style="color:#ff4d4f"> (未满门槛)</span>
           </el-radio>
         </el-radio-group>
         <p v-if="coupons.length===0" style="color:#999">暂无可用优惠券</p>
@@ -55,7 +58,10 @@ const total = computed(() => items.value.reduce((s,i) => s + i.price * i.quantit
 const discount = computed(() => {
   if (!selectedCouponId.value) return 0
   const c = coupons.value.find(c => c.id === selectedCouponId.value)
-  return c ? c.value : 0
+  if (!c || total.value < c.threshold) return 0
+  if (c.type === 1) return c.value  // 满减券: 直接减
+  if (c.type === 2) return Math.floor(total.value * (100 - c.value) / 100)  // 折扣券: 8.5折=value85
+  return 0
 })
 function fmtSpec(s: string): string { try { return Object.values(JSON.parse(s)).join(' / ') } catch { return s } }
 async function loadCoupons() {
