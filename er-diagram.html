@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<style>
+body { font-family: "Microsoft YaHei",sans-serif; padding: 20px; }
+h2 { text-align: center; font-size: 20px; margin: 30px 0 20px; }
+.er { position: relative; width: 100%; min-height: 800px; }
+.tbl { position: absolute; background: #fff; border: 2px solid #34495e; border-radius: 6px; width: 210px; box-shadow: 2px 2px 6px rgba(0,0,0,.1); }
+.tbl-title { background: #34495e; color: #fff; font-weight: bold; padding: 6px 10px; border-radius: 3px 3px 0 0; text-align: center; font-size: 13px; }
+.tbl-row { padding: 4px 10px; font-size: 11px; border-bottom: 1px solid #eee; }
+.tbl-row.pk { color: #e74c3c; }
+.tbl-row.fk { color: #3498db; }
+.legend { margin-top: 40px; padding: 15px; border: 1px solid #ddd; font-size: 12px; }
+.legend span { margin-right: 20px; }
+</style></head><body>
+<h2>图3-1 CloudMall 系统数据库E-R图</h2>
+<div class="er">
+<div class="tbl" style="left:10px;top:10px;">
+<div class="tbl-title">t_user</div>
+<div class="tbl-row pk">id BIGINT PK</div>
+<div class="tbl-row ">phone VARCHAR(20)</div>
+<div class="tbl-row ">password VARCHAR(200)</div>
+<div class="tbl-row ">nickname VARCHAR(50)</div>
+<div class="tbl-row ">status INT</div>
+<div class="tbl-row ">create_time DATETIME</div>
+</div>
+<div class="tbl" style="left:260px;top:10px;">
+<div class="tbl-title">t_user_address</div>
+<div class="tbl-row pk">id BIGINT PK</div>
+<div class="tbl-row fk">user_id BIGINT FK</div>
+<div class="tbl-row ">receiver VARCHAR(50)</div>
+<div class="tbl-row ">phone VARCHAR(20)</div>
+<div class="tbl-row ">province VARCHAR(50)</div>
+<div class="tbl-row ">city VARCHAR(50)</div>
+<div class="tbl-row ">district VARCHAR(50)</div>
+<div class="tbl-row ">detail VARCHAR(200)</div>
+</div>
+<div class="tbl" style="left:510px;top:10px;">
+<div class="tbl-title">t_merchant</div>
+<div class="tbl-row pk">id BIGINT PK</div>
+<div class="tbl-row fk">user_id BIGINT FK</div>
+<div class="tbl-row ">shop_name VARCHAR(100)</div>
+<div class="tbl-row ">status INT</div>
+</div>
+<div class="tbl" style="left:10px;top:200px;">
+<div class="tbl-title">t_category</div>
+<div class="tbl-row pk">id BIGINT PK</div>
+<div class="tbl-row ">name VARCHAR(50)</div>
+<div class="tbl-row ">parent_id BIGINT</div>
+<div class="tbl-row ">level INT</div>
+<div class="tbl-row ">sort INT</div>
+</div>
+<div class="tbl" style="left:240px;top:200px;">
+<div class="tbl-title">t_product</div>
+<div class="tbl-row pk">id BIGINT PK</div>
+<div class="tbl-row fk">merchant_id BIGINT FK</div>
+<div class="tbl-row fk">category_id BIGINT FK</div>
+<div class="tbl-row ">name VARCHAR(200)</div>
+<div class="tbl-row ">brand VARCHAR(100)</div>
+<div class="tbl-row ">status INT</div>
+</div>
+<div class="tbl" style="left:490px;top:200px;">
+<div class="tbl-title">t_sku</div>
+<div class="tbl-row pk">id BIGINT PK</div>
+<div class="tbl-row fk">product_id BIGINT FK</div>
+<div class="tbl-row ">spec_info VARCHAR(200)</div>
+<div class="tbl-row ">price INT</div>
+<div class="tbl-row ">stock INT</div>
+</div>
+<div class="tbl" style="left:730px;top:200px;">
+<div class="tbl-title">t_review</div>
+<div class="tbl-row pk">id BIGINT PK</div>
+<div class="tbl-row fk">user_id BIGINT FK</div>
+<div class="tbl-row fk">product_id BIGINT FK</div>
+<div class="tbl-row fk">order_id BIGINT FK</div>
+<div class="tbl-row ">rating INT</div>
+<div class="tbl-row ">content TEXT</div>
+</div>
+<div class="tbl" style="left:10px;top:400px;">
+<div class="tbl-title">t_order</div>
+<div class="tbl-row pk">id BIGINT PK</div>
+<div class="tbl-row ">order_no VARCHAR(30)</div>
+<div class="tbl-row fk">user_id BIGINT FK</div>
+<div class="tbl-row ">total_amount INT</div>
+<div class="tbl-row ">discount_amount INT</div>
+<div class="tbl-row ">pay_amount INT</div>
+<div class="tbl-row ">status INT</div>
+<div class="tbl-row fk">coupon_id BIGINT FK</div>
+</div>
+<div class="tbl" style="left:280px;top:400px;">
+<div class="tbl-title">t_order_item</div>
+<div class="tbl-row pk">id BIGINT PK</div>
+<div class="tbl-row fk">order_id BIGINT FK</div>
+<div class="tbl-row fk">sku_id BIGINT FK</div>
+<div class="tbl-row ">product_name VARCHAR(200)</div>
+<div class="tbl-row ">price INT</div>
+<div class="tbl-row ">quantity INT</div>
+</div>
+<div class="tbl" style="left:550px;top:400px;">
+<div class="tbl-title">t_payment</div>
+<div class="tbl-row pk">id BIGINT PK</div>
+<div class="tbl-row fk">order_id BIGINT FK</div>
+<div class="tbl-row ">pay_no VARCHAR(50)</div>
+<div class="tbl-row ">amount INT</div>
+<div class="tbl-row ">pay_method INT</div>
+<div class="tbl-row ">status INT</div>
+</div>
+<div class="tbl" style="left:10px;top:590px;">
+<div class="tbl-title">t_coupon_template</div>
+<div class="tbl-row pk">id BIGINT PK</div>
+<div class="tbl-row fk">merchant_id BIGINT FK</div>
+<div class="tbl-row ">name VARCHAR(100)</div>
+<div class="tbl-row ">type INT</div>
+<div class="tbl-row ">threshold INT</div>
+<div class="tbl-row ">value INT</div>
+<div class="tbl-row ">total_count INT</div>
+</div>
+<div class="tbl" style="left:280px;top:590px;">
+<div class="tbl-title">t_user_coupon</div>
+<div class="tbl-row pk">id BIGINT PK</div>
+<div class="tbl-row fk">user_id BIGINT FK</div>
+<div class="tbl-row fk">template_id BIGINT FK</div>
+<div class="tbl-row ">status INT</div>
+<div class="tbl-row ">expire_time DATETIME</div>
+</div>
+<div class="tbl" style="left:530px;top:590px;">
+<div class="tbl-title">t_after_sale</div>
+<div class="tbl-row pk">id BIGINT PK</div>
+<div class="tbl-row fk">order_id BIGINT FK</div>
+<div class="tbl-row fk">user_id BIGINT FK</div>
+<div class="tbl-row ">type INT</div>
+<div class="tbl-row ">reason VARCHAR(500)</div>
+<div class="tbl-row ">amount INT</div>
+<div class="tbl-row ">status INT</div>
+</div>
+<div class="tbl" style="left:10px;top:760px;">
+<div class="tbl-title">t_seckill_session</div>
+<div class="tbl-row pk">id BIGINT PK</div>
+<div class="tbl-row fk">sku_id BIGINT FK</div>
+<div class="tbl-row ">seckill_price INT</div>
+<div class="tbl-row ">stock INT</div>
+<div class="tbl-row ">start_time DATETIME</div>
+<div class="tbl-row ">end_time DATETIME</div>
+</div>
+</div>
+<div style="margin-top:30px;padding:20px;border:1px solid #ddd;border-radius:8px">
+<h3 style="margin-top:0">实体关系说明</h3>
+<table style="width:100%;border-collapse:collapse">
+<tr style="background:#f0f0f0"><th style="padding:8px;border:1px solid #ddd">实体A</th><th style="padding:8px;border:1px solid #ddd">关系</th><th style="padding:8px;border:1px solid #ddd">实体B</th><th style="padding:8px;border:1px solid #ddd">说明</th></tr>
+<tr><td style="padding:8px;border:1px solid #ddd">t_user</td><td style="padding:8px;border:1px solid #ddd;text-align:center;font-weight:bold">1:N</td><td style="padding:8px;border:1px solid #ddd">t_user_address</td><td style="padding:8px;border:1px solid #ddd">地址</td></tr>
+<tr><td style="padding:8px;border:1px solid #ddd">t_user</td><td style="padding:8px;border:1px solid #ddd;text-align:center;font-weight:bold">1:N</td><td style="padding:8px;border:1px solid #ddd">t_order</td><td style="padding:8px;border:1px solid #ddd">下单</td></tr>
+<tr><td style="padding:8px;border:1px solid #ddd">t_user</td><td style="padding:8px;border:1px solid #ddd;text-align:center;font-weight:bold">1:N</td><td style="padding:8px;border:1px solid #ddd">t_review</td><td style="padding:8px;border:1px solid #ddd">评价</td></tr>
+<tr><td style="padding:8px;border:1px solid #ddd">t_user</td><td style="padding:8px;border:1px solid #ddd;text-align:center;font-weight:bold">1:N</td><td style="padding:8px;border:1px solid #ddd">t_user_coupon</td><td style="padding:8px;border:1px solid #ddd">领券</td></tr>
+<tr><td style="padding:8px;border:1px solid #ddd">t_category</td><td style="padding:8px;border:1px solid #ddd;text-align:center;font-weight:bold">1:N</td><td style="padding:8px;border:1px solid #ddd">t_product</td><td style="padding:8px;border:1px solid #ddd">分类</td></tr>
+<tr><td style="padding:8px;border:1px solid #ddd">t_merchant</td><td style="padding:8px;border:1px solid #ddd;text-align:center;font-weight:bold">1:N</td><td style="padding:8px;border:1px solid #ddd">t_product</td><td style="padding:8px;border:1px solid #ddd">发布</td></tr>
+<tr><td style="padding:8px;border:1px solid #ddd">t_merchant</td><td style="padding:8px;border:1px solid #ddd;text-align:center;font-weight:bold">1:N</td><td style="padding:8px;border:1px solid #ddd">t_coupon_template</td><td style="padding:8px;border:1px solid #ddd">创建</td></tr>
+<tr><td style="padding:8px;border:1px solid #ddd">t_product</td><td style="padding:8px;border:1px solid #ddd;text-align:center;font-weight:bold">1:N</td><td style="padding:8px;border:1px solid #ddd">t_sku</td><td style="padding:8px;border:1px solid #ddd">规格</td></tr>
+<tr><td style="padding:8px;border:1px solid #ddd">t_product</td><td style="padding:8px;border:1px solid #ddd;text-align:center;font-weight:bold">1:N</td><td style="padding:8px;border:1px solid #ddd">t_review</td><td style="padding:8px;border:1px solid #ddd">被评价</td></tr>
+<tr><td style="padding:8px;border:1px solid #ddd">t_order</td><td style="padding:8px;border:1px solid #ddd;text-align:center;font-weight:bold">1:N</td><td style="padding:8px;border:1px solid #ddd">t_order_item</td><td style="padding:8px;border:1px solid #ddd">明细</td></tr>
+<tr><td style="padding:8px;border:1px solid #ddd">t_order</td><td style="padding:8px;border:1px solid #ddd;text-align:center;font-weight:bold">1:1</td><td style="padding:8px;border:1px solid #ddd">t_payment</td><td style="padding:8px;border:1px solid #ddd">支付</td></tr>
+<tr><td style="padding:8px;border:1px solid #ddd">t_order</td><td style="padding:8px;border:1px solid #ddd;text-align:center;font-weight:bold">1:N</td><td style="padding:8px;border:1px solid #ddd">t_after_sale</td><td style="padding:8px;border:1px solid #ddd">售后</td></tr>
+<tr><td style="padding:8px;border:1px solid #ddd">t_coupon_template</td><td style="padding:8px;border:1px solid #ddd;text-align:center;font-weight:bold">1:N</td><td style="padding:8px;border:1px solid #ddd">t_user_coupon</td><td style="padding:8px;border:1px solid #ddd">发放</td></tr>
+<tr><td style="padding:8px;border:1px solid #ddd">t_sku</td><td style="padding:8px;border:1px solid #ddd;text-align:center;font-weight:bold">1:N</td><td style="padding:8px;border:1px solid #ddd">t_seckill_session</td><td style="padding:8px;border:1px solid #ddd">秒杀</td></tr>
+</table>
+<div class="legend" style="margin-top:15px">
+<span style="color:#e74c3c">■ PK 主键</span>
+<span style="color:#3498db">■ FK 外键</span>
+<span>13个实体 · 14条关系 · 3个数据库(user/product/order)</span>
+</div></div>
+</body></html>
