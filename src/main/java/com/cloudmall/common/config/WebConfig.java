@@ -21,7 +21,8 @@ public class WebConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                         "/api/user/login", "/api/user/register",
                         "/api/product/**",        // 商品浏览公开
-                        "/api/category/**"         // 类目公开
+                        "/api/category/**",       // 类目公开
+                        "/api/review/**"          // 评价公开
                 );
     }
 }
