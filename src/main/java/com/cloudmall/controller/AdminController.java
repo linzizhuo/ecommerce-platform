@@ -7,6 +7,8 @@ import com.cloudmall.mapper.*;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -19,6 +21,9 @@ public class AdminController {
     @Resource private OrderMapper orderMapper;
     @Resource private PaymentMapper paymentMapper;
     @Resource private ReviewMapper reviewMapper;
+    @Resource private ActivityMapper activityMapper;
+    @Resource private ActivityProductMapper activityProductMapper;
+    @Resource private ViolationMapper violationMapper;
 
     // ===== 数据大屏 =====
     @GetMapping("/dashboard")
@@ -89,5 +94,163 @@ public class AdminController {
     public R<Void> deleteReview(@PathVariable Long id) {
         reviewMapper.deleteById(id);
         return R.ok();
+    }
+
+    // ===== 活动管理 =====
+    @GetMapping("/activities")
+    public R<List<Map<String, Object>>> activities(@RequestParam(required = false) Integer type) {
+        LambdaQueryWrapper<Activity> qw = new LambdaQueryWrapper<Activity>()
+                .orderByDesc(Activity::getCreateTime);
+        if (type != null) qw.eq(Activity::getType, type);
+        List<Activity> list = activityMapper.selectList(qw);
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Activity a : list) {
+            Map<String, Object> m = new HashMap<>();
+            m.put("id", a.getId());
+            m.put("name", a.getName());
+            m.put("type", a.getType());
+            m.put("rules", a.getRules());
+            m.put("startTime", a.getStartTime());
+            m.put("endTime", a.getEndTime());
+            m.put("status", a.getStatus());
+            m.put("merchantId", a.getMerchantId());
+            m.put("createTime", a.getCreateTime());
+            result.add(m);
+        }
+        return R.ok(result);
+    }
+
+    @PostMapping("/activity")
+    public R<?> createActivity(@RequestBody Map<String, Object> body) {
+        LocalDateTime startTime = LocalDateTime.parse((String) body.get("startTime"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        LocalDateTime endTime = LocalDateTime.parse((String) body.get("endTime"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        Integer type = (Integer) body.get("type");
+
+        // 排期冲突检测
+        List<Map<String, String>> conflicts = checkScheduleConflict(type, startTime, endTime, null);
+        if (!conflicts.isEmpty()) {
+            Map<String, Object> warn = new HashMap<>();
+            warn.put("warning", "存在时间重叠的活动");
+            warn.put("conflicts", conflicts);
+            return R.ok(warn);
+        }
+
+        Activity a = new Activity();
+        a.setName((String) body.get("name"));
+        a.setType(type);
+        a.setRules((String) body.get("rules"));
+        a.setStartTime(startTime);
+        a.setEndTime(endTime);
+        a.setStatus(1); // 待审核
+        a.setCreateTime(LocalDateTime.now());
+        activityMapper.insert(a);
+        return R.ok();
+    }
+
+    @PutMapping("/activity/{id}/status")
+    public R<?> auditActivity(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        Activity a = activityMapper.selectById(id);
+        if (a != null) {
+            Integer newStatus = (Integer) body.get("status");
+            // 审核通过时检测排期冲突
+            if (newStatus == 2) {
+                List<Map<String, String>> conflicts = checkScheduleConflict(
+                        a.getType(), a.getStartTime(), a.getEndTime(), id);
+                if (!conflicts.isEmpty()) {
+                    Map<String, Object> warn = new HashMap<>();
+                    warn.put("warning", "存在时间重叠的进行中活动");
+                    warn.put("conflicts", conflicts);
+                    return R.ok(warn);
+                }
+            }
+            a.setStatus(newStatus);
+            activityMapper.updateById(a);
+        }
+        return R.ok();
+    }
+
+    /** 检测活动排期冲突 */
+    private List<Map<String, String>> checkScheduleConflict(Integer type,
+            LocalDateTime startTime, LocalDateTime endTime, Long excludeId) {
+        List<Map<String, String>> conflicts = new ArrayList<>();
+        LambdaQueryWrapper<Activity> qw = new LambdaQueryWrapper<Activity>()
+                .eq(Activity::getType, type)
+                .eq(Activity::getStatus, 2) // 进行中的活动
+                .lt(Activity::getStartTime, endTime)
+                .gt(Activity::getEndTime, startTime);
+        if (excludeId != null) qw.ne(Activity::getId, excludeId);
+        List<Activity> overlapping = activityMapper.selectList(qw);
+        for (Activity act : overlapping) {
+            Map<String, String> info = new HashMap<>();
+            info.put("id", act.getId().toString());
+            info.put("name", act.getName());
+            info.put("startTime", act.getStartTime().toString());
+            info.put("endTime", act.getEndTime().toString());
+            conflicts.add(info);
+        }
+        return conflicts;
+    }
+
+    // ===== 违规处罚 =====
+    @GetMapping("/violations")
+    public R<List<Violation>> violations() {
+        return R.ok(violationMapper.selectList(
+            new LambdaQueryWrapper<Violation>().orderByDesc(Violation::getCreateTime)));
+    }
+
+    @PostMapping("/violation")
+    public R<Void> createViolation(@RequestBody Map<String, Object> body) {
+        Violation v = new Violation();
+        v.setMerchantId(Long.valueOf(body.get("merchantId").toString()));
+        v.setType((Integer) body.get("type"));
+        v.setReason((String) body.get("reason"));
+        v.setPenaltyType((Integer) body.get("penaltyType"));
+        v.setPenaltyAmount(body.get("penaltyAmount") != null ?
+                (Integer) body.get("penaltyAmount") : 0);
+        v.setStatus(0);
+        v.setCreateTime(LocalDateTime.now());
+        violationMapper.insert(v);
+        return R.ok();
+    }
+
+    // ===== 对账报表 =====
+    @GetMapping("/reconciliation")
+    public R<List<Map<String, Object>>> reconciliation(
+            @RequestParam(required = false) Long merchantId,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        LambdaQueryWrapper<Order> qw = new LambdaQueryWrapper<Order>()
+                .ge(Order::getStatus, 1)
+                .orderByDesc(Order::getCreateTime);
+
+        if (startDate != null && !startDate.isEmpty()) {
+            qw.ge(Order::getPayTime, LocalDateTime.parse(startDate + "T00:00:00"));
+        }
+        if (endDate != null && !endDate.isEmpty()) {
+            qw.le(Order::getPayTime, LocalDateTime.parse(endDate + "T23:59:59"));
+        }
+
+        List<Order> orders = orderMapper.selectList(qw);
+        // 按日期分组
+        Map<String, Map<String, Object>> dailyMap = new LinkedHashMap<>();
+        for (Order o : orders) {
+            String dateKey = o.getPayTime() != null ?
+                    o.getPayTime().toLocalDate().toString() :
+                    o.getCreateTime().toLocalDate().toString();
+            dailyMap.computeIfAbsent(dateKey, k -> {
+                Map<String, Object> m = new HashMap<>();
+                m.put("date", k);
+                m.put("orderCount", 0);
+                m.put("totalAmount", 0);
+                return m;
+            });
+            Map<String, Object> d = dailyMap.get(dateKey);
+            d.put("orderCount", (Integer) d.get("orderCount") + 1);
+            d.put("totalAmount", (Integer) d.get("totalAmount") +
+                    (o.getPayAmount() != null ? o.getPayAmount() : 0));
+        }
+        return R.ok(new ArrayList<>(dailyMap.values()));
     }
 }

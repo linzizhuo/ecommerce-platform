@@ -1,14 +1,16 @@
 <template>
   <div class="page"><el-container>
     <el-header class="mh"><span>CloudMall 商家后台</span>
-      <div><router-link to="/merchant/dashboard">看板</router-link><router-link to="/merchant/products">商品</router-link><router-link to="/merchant/orders">订单</router-link></div>
+      <div><router-link to="/merchant/dashboard">看板</router-link><router-link to="/merchant/products">商品</router-link><router-link to="/merchant/orders">订单</router-link><router-link to="/merchant/coupons">优惠券</router-link><router-link to="/merchant/seckill">秒杀</router-link><router-link to="/merchant/groupbuy">拼团</router-link><router-link to="/merchant/presale">预售</router-link><router-link to="/merchant/distribution">分销</router-link><router-link to="/merchant/combo">套餐</router-link><router-link to="/merchant/redenvelope">红包</router-link><router-link to="/" style="color:#ff4d4f">回前台</router-link></div>
     </el-header>
     <el-main>
       <h3>发布商品</h3>
       <el-form :model="form" label-width="80px" style="max-width:600px">
         <el-form-item label="商品名称"><el-input v-model="form.name" /></el-form-item>
         <el-form-item label="品牌"><el-input v-model="form.brand" /></el-form-item>
-        <el-form-item label="描述"><el-input v-model="form.description" type="textarea" /></el-form-item>
+        <el-form-item label="描述">
+          <QuillEditor v-model:content="form.description" content-type="html" theme="snow" toolbar="essential" style="height:200px;margin-bottom:40px" />
+        </el-form-item>
         <el-form-item label="类目">
           <el-select v-model="form.categoryId" placeholder="选择类目">
             <el-option v-for="c in categories" :key="c.id" :label="c.name" :value="c.id" />
@@ -29,7 +31,7 @@
   </el-container></div>
 </template>
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'; import { useRouter } from 'vue-router'; import { ElMessage } from 'element-plus'; import request from '@/utils/request'
+import { ref, reactive, onMounted } from 'vue'; import { useRouter } from 'vue-router'; import { ElMessage } from 'element-plus'; import { QuillEditor } from '@vueup/vue-quill'; import '@vueup/vue-quill/dist/vue-quill.snow.css'; import request from '@/utils/request'
 const router = useRouter(); const saving = ref(false); const categories = ref<any[]>([])
 const form = reactive<any>({ name:'', brand:'', description:'', categoryId:null, skus:[] })
 onMounted(async () => { const r:any = await request.get('/product/category/list'); categories.value = r.data||[] })

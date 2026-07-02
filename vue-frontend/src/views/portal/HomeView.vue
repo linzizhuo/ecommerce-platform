@@ -26,6 +26,10 @@
       </div>
     </header>
 
+    <div class="seckill-banner" @click="goBanner" v-if="homeConfig.bannerText">
+      {{ homeConfig.bannerText }}
+    </div>
+
     <nav class="cat-nav">
       <div class="inner">
         <el-button :type="!catId ? 'danger' : 'default'" round @click="catId = null; loadProducts()">🔥 全部</el-button>
@@ -38,6 +42,24 @@
     </nav>
 
     <div class="container">
+      <!-- 推荐商品区 -->
+      <div v-if="homeConfig.featuredProducts?.length" class="featured-section">
+        <h3 class="section-title">🔥 推荐商品</h3>
+        <div class="featured-grid">
+          <el-card v-for="p in homeConfig.featuredProducts" :key="p.id" shadow="hover" class="featured-card"
+            @click="$router.push(`/product/${p.id}`)">
+            <div class="feat-img" :style="{background: colors[p.id % colors.length]}">
+              <span class="feat-letter">{{ p.name?.charAt(0) || '商' }}</span>
+            </div>
+            <div class="feat-body">
+              <h4>{{ p.name }}</h4>
+              <p class="feat-brand">{{ p.brand }}</p>
+              <span class="feat-price">¥{{ ((p.minPrice || 0) / 100).toFixed(2) }}起</span>
+            </div>
+          </el-card>
+        </div>
+      </div>
+
       <!-- 搜索时显示关键词 -->
       <div v-if="keyword" class="search-hint">搜索结果: "{{ keyword }}"</div>
 
@@ -61,6 +83,12 @@
       <el-empty v-if="!products.length && !keyword" description="暂无商品，商家正在上架中..." />
     </div>
 
+    <!-- 弹窗公告 -->
+    <el-dialog v-model="popupVisible" :title="popupNotice?.title" width="450px" :close-on-click-modal="false">
+      <div v-html="popupNotice?.content" style="line-height:1.8"></div>
+      <template #footer><el-button type="primary" @click="popupVisible=false">知道了</el-button></template>
+    </el-dialog>
+
     <footer class="site-footer">
       <p>CloudMall 高并发电商系统 © 2026 | Vue3 + Spring Cloud Alibaba</p>
     </footer>
@@ -78,6 +106,7 @@ const keyword = ref('')
 const catId = ref<number | null>(null)
 const products = ref<any[]>([])
 const categories = ref<any[]>([])
+const homeConfig = ref<any>({})
 
 const colors = ['linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
   'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
@@ -118,8 +147,33 @@ async function loadCategories() {
   categories.value = res.data || []
 }
 function search() { catId.value = null; loadProducts() }
+function goBanner() {
+  if (homeConfig.value.bannerLink) {
+    if (homeConfig.value.bannerLink.startsWith('/')) $router.push(homeConfig.value.bannerLink)
+    else window.location.href = homeConfig.value.bannerLink
+  }
+}
+const popupVisible = ref(false)
+const popupNotice = ref<any>(null)
+async function loadHomeConfig() {
+  try { const r: any = await request.get('/product/home/config'); homeConfig.value = r.data || {} } catch {}
+}
+async function checkPopup() {
+  try {
+    const r: any = await request.get('/notice/active')
+    const notices = r.data || []
+    const now = new Date()
+    const popup = notices.find((n: any) => {
+      if (n.type !== 3) return false
+      if (n.startTime && new Date(n.startTime) > now) return false
+      if (n.endTime && new Date(n.endTime) < now) return false
+      return true
+    })
+    if (popup) { popupNotice.value = popup; popupVisible.value = true }
+  } catch {}
+}
 
-onMounted(() => { loadCategories(); loadProducts(); userStore.fetchUser() })
+onMounted(() => { loadCategories(); loadProducts(); userStore.fetchUser(); loadHomeConfig(); checkPopup() })
 </script>
 
 <style scoped>
@@ -134,9 +188,22 @@ onMounted(() => { loadCategories(); loadProducts(); userStore.fetchUser() })
 .user-tag { cursor: pointer; color: #ff4d4f; font-weight: 500; }
 .btn-login { color: #ff4d4f !important; border: 1px solid #ff4d4f; padding: 5px 16px; border-radius: 20px; }
 .btn-register { background: #ff4d4f; color: #fff !important; padding: 6px 16px; border-radius: 20px; }
+.seckill-banner { background: linear-gradient(135deg, #ff4d4f, #ff7875); color: #fff; text-align: center; padding: 12px; font-size: 16px; font-weight: 700; cursor: pointer; letter-spacing: 1px; }
+.seckill-banner:hover { background: linear-gradient(135deg, #e8453c, #f56c6c); }
 .cat-nav { background: #fff; padding: 8px 0; border-top: 1px solid #f5f5f5; }
 .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
 .search-hint { padding: 10px 0; color: #999; font-size: 14px; }
+.featured-section { margin-bottom: 24px; }
+.section-title { font-size: 20px; font-weight: 700; margin-bottom: 12px; color: #333; }
+.featured-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.featured-card { border-radius: 12px; overflow: hidden; cursor: pointer; transition: all 0.25s; border: 2px solid #ffe0e0; }
+.featured-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(255,77,79,0.15); border-color: #ff4d4f; }
+.feat-img { height: 140px; display: flex; align-items: center; justify-content: center; }
+.feat-letter { font-size: 42px; color: rgba(255,255,255,0.85); font-weight: bold; }
+.feat-body { padding: 10px 14px; text-align: center; }
+.feat-body h4 { font-size: 14px; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.feat-brand { color: #aaa; font-size: 11px; margin-bottom: 6px; }
+.feat-price { font-size: 18px; font-weight: 700; color: #ff4d4f; }
 .product-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
 @media (max-width: 960px) { .product-grid { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 640px) { .product-grid { grid-template-columns: repeat(2, 1fr); } }

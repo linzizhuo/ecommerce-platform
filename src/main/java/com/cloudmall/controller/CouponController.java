@@ -7,10 +7,14 @@ import com.cloudmall.entity.UserCoupon;
 import com.cloudmall.mapper.CouponTemplateMapper;
 import com.cloudmall.mapper.UserCouponMapper;
 import jakarta.annotation.Resource;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/api/coupon")
@@ -18,6 +22,7 @@ public class CouponController {
 
     @Resource private CouponTemplateMapper templateMapper;
     @Resource private UserCouponMapper userCouponMapper;
+    @Resource private RedissonClient redissonClient;
 
     /** 商家优惠券列表 */
     @GetMapping("/merchant")
@@ -81,18 +86,45 @@ public class CouponController {
         return R.ok(result);
     }
 
-    /** 领取优惠券 */
+    /** 领取优惠券（高并发安全：分布式锁 + receivedCount原子更新） */
     @PostMapping("/receive/{templateId}")
+    @Transactional
     public R<Void> receive(@RequestAttribute("userId") Long userId, @PathVariable Long templateId) {
-        long count = userCouponMapper.selectCount(
-            new LambdaQueryWrapper<UserCoupon>().eq(UserCoupon::getUserId, userId)
-                .eq(UserCoupon::getTemplateId, templateId));
-        if (count > 0) return R.fail("已领取过");
-        UserCoupon uc = new UserCoupon();
-        uc.setUserId(userId); uc.setTemplateId(templateId);
-        uc.setStatus(0); uc.setExpireTime(LocalDateTime.now().plusDays(14));
-        uc.setCreateTime(LocalDateTime.now());
-        userCouponMapper.insert(uc);
-        return R.ok();
+        // 分布式锁防并发超领
+        RLock lock = redissonClient.getLock("coupon:receive:" + templateId);
+        try {
+            if (!lock.tryLock(2, 5, TimeUnit.SECONDS)) {
+                return R.fail("领取繁忙，请稍后再试");
+            }
+            // 检查是否已领取
+            long count = userCouponMapper.selectCount(
+                new LambdaQueryWrapper<UserCoupon>().eq(UserCoupon::getUserId, userId)
+                    .eq(UserCoupon::getTemplateId, templateId));
+            if (count > 0) return R.fail("已领取过");
+            // 检查库存
+            CouponTemplate template = templateMapper.selectById(templateId);
+            if (template == null) return R.fail("优惠券不存在");
+            if (template.getReceivedCount() != null && template.getReceivedCount() >= template.getTotalCount()) {
+                return R.fail("优惠券已领完");
+            }
+            // 领取
+            UserCoupon uc = new UserCoupon();
+            uc.setUserId(userId); uc.setTemplateId(templateId);
+            uc.setStatus(0); uc.setExpireTime(LocalDateTime.now().plusDays(14));
+            uc.setCreateTime(LocalDateTime.now());
+            userCouponMapper.insert(uc);
+            // 更新已领取数量
+            template.setReceivedCount(
+                (template.getReceivedCount() == null ? 0 : template.getReceivedCount()) + 1);
+            templateMapper.updateById(template);
+            return R.ok();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return R.fail("系统繁忙");
+        } finally {
+            try {
+                if (lock.isHeldByCurrentThread()) lock.unlock();
+            } catch (Exception ignored) {}
+        }
     }
 }

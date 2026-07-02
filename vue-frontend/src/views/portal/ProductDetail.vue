@@ -9,7 +9,7 @@
       <div class="detail-layout">
         <div class="main-img"><div class="img-placeholder" :style="{background: gradient}">{{ product.name?.charAt(0) }}</div></div>
         <div class="info">
-          <h2>{{ product.name }}</h2>
+          <h2>{{ product.name }} <el-button size="small" :type="faved?'danger':'default'" circle @click="toggleFav">{{ faved ? '❤️' : '🤍' }}</el-button></h2>
           <p class="brand">品牌: {{ product.brand }}</p>
           <div class="rating-row" v-if="reviewData.avgRating > 0">
             <el-rate v-model="reviewData.avgRating" disabled show-score text-color="#ff9900" />
@@ -37,6 +37,11 @@
           </div>
         </div>
       </div>
+      <!-- 商品描述 -->
+      <el-card v-if="product.description" class="desc-section">
+        <template #header><span style="font-weight:bold">📝 商品详情</span></template>
+        <div class="desc-content" v-html="product.description"></div>
+      </el-card>
       <!-- 评价区 -->
       <el-card class="review-section">
         <template #header><span style="font-weight:bold">商品评价 ({{ reviewData.total }})</span>
@@ -65,12 +70,14 @@ import { ElMessage } from 'element-plus'
 import { ShoppingCart } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import { useUserStore } from '@/stores/userStore'
+import { addFavorite, removeFavorite, checkFavorite } from '@/api/favorite'
 
 const route = useRoute(); const router = useRouter()
 const userStore = useUserStore()
 const product = ref<any>(null); const skuList = ref<any[]>([])
 const selectedSkuId = ref<number | null>(null); const quantity = ref(1)
 const reviewData = ref<any>({ list: [], avgRating: 0, total: 0 })
+const faved = ref(false)
 const gradient = 'linear-gradient(135deg, ' + ['#667eea,#764ba2','#f093fb,#f5576c','#4facfe,#00f2fe','#43e97b,#38f9d7'][Math.floor(Math.random()*4)] + ')'
 
 const selectedSku = computed(() => skuList.value.find(s => s.id === selectedSkuId.value))
@@ -85,6 +92,13 @@ async function addToCart() {
   ElMessage.success('已加入购物车')
 }
 function buyNow() { addToCart().then(() => router.push('/cart')) }
+async function toggleFav() {
+  if (!userStore.token) { router.push('/login'); return }
+  const pid = Number(route.params.id)
+  if (faved.value) { await removeFavorite(pid); ElMessage.success('已取消收藏') }
+  else { await addFavorite(pid); ElMessage.success('已收藏') }
+  faved.value = !faved.value
+}
 
 onMounted(async () => {
   const id = route.params.id
@@ -92,11 +106,12 @@ onMounted(async () => {
   product.value = res.data?.product || res.data
   skuList.value = res.data?.skuList || []
   if (skuList.value.length) selectedSkuId.value = skuList.value[0].id
-  // 加载评价
+  // 加载评价 & 收藏状态
   try {
     const rev: any = await request.get(`/review/product/${id}`)
     reviewData.value = rev.data || { list: [], avgRating: 0, total: 0 }
   } catch {}
+  try { const f: any = await checkFavorite(Number(id)); faved.value = f.data || false } catch {}
 })
 </script>
 
@@ -122,6 +137,10 @@ onMounted(async () => {
 .stock { color: #666; margin-bottom: 12px; }
 .qty-row { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; color: #666; }
 .action-row { display: flex; gap: 12px; }
+.desc-section { margin-top: 20px; border-radius: 12px; }
+.desc-content { line-height: 1.8; }
+.desc-content :deep(img) { max-width: 100%; }
+.desc-content :deep(p) { margin: 8px 0; }
 .review-section { margin-top: 20px; border-radius: 12px; }
 .review-item { padding: 14px 0; border-bottom: 1px solid #f5f5f5; }
 .review-header { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }

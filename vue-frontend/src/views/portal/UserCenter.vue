@@ -7,6 +7,20 @@
         <p>👤 {{ userStore.user?.nickname }} | 📱 {{ userStore.user?.phone }}</p>
       </el-card>
 
+      <!-- 快捷入口 -->
+      <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+        <el-button @click="$router.push('/orders')">📋 我的订单</el-button>
+        <el-button @click="$router.push('/favorites')">❤️ 我的收藏</el-button>
+        <el-button @click="$router.push('/points')">⭐ 积分中心</el-button>
+        <el-button @click="$router.push('/messages')">🔔 消息中心</el-button>
+        <el-button @click="$router.push('/aftersale')">🔄 售后申请</el-button>
+        <el-button @click="$router.push('/seckill')" type="danger">⚡ 秒杀专区</el-button>
+        <el-button @click="$router.push('/presale')">📦 预售活动</el-button>
+        <el-button @click="$router.push('/distribution')">💰 分销中心</el-button>
+        <el-button @click="$router.push('/combo')">🎁 优惠套餐</el-button>
+        <el-button @click="$router.push('/red-envelope')">🧧 红包</el-button>
+      </div>
+
       <!-- 我的优惠券 -->
       <el-card style="margin-bottom:20px">
         <template #header><span>🎫 我的优惠券 ({{ myCoupons.length }})</span>

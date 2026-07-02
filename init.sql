@@ -335,3 +335,328 @@ INSERT INTO t_role (role_name, role_code) VALUES
 ('超级管理员', 'ROLE_SUPER_ADMIN'),
 ('商家', 'ROLE_MERCHANT'),
 ('普通用户', 'ROLE_USER');
+
+-- ==================== 用户收藏 ====================
+DROP TABLE IF EXISTS t_user_favorite;
+CREATE TABLE t_user_favorite (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    product_id BIGINT NOT NULL,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE INDEX uk_user_product (user_id, product_id)
+) COMMENT '用户收藏';
+
+-- ==================== 积分与等级 ====================
+DROP TABLE IF EXISTS t_user_point;
+CREATE TABLE t_user_point (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL UNIQUE,
+    total_point INT DEFAULT 0 COMMENT '总积分',
+    available_point INT DEFAULT 0 COMMENT '可用积分',
+    INDEX idx_user_id (user_id)
+) COMMENT '用户积分';
+
+DROP TABLE IF EXISTS t_point_log;
+CREATE TABLE t_point_log (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    point INT NOT NULL COMMENT '变动积分(正=获得,负=消费)',
+    type INT NOT NULL COMMENT '1下单 2签到 3兑换 4过期',
+    description VARCHAR(200),
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user_time (user_id, create_time)
+) COMMENT '积分流水';
+
+DROP TABLE IF EXISTS t_member_level;
+CREATE TABLE t_member_level (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    level_name VARCHAR(50) NOT NULL COMMENT '等级名称',
+    level_code INT NOT NULL UNIQUE COMMENT '等级编码(0普通/1银/2金/3钻石)',
+    min_amount INT NOT NULL COMMENT '最低消费额(分)',
+    discount_rate INT DEFAULT 100 COMMENT '折扣率(百分制,95=9.5折)',
+    free_shipping INT DEFAULT 0 COMMENT '是否免运费',
+    description VARCHAR(200)
+) COMMENT '会员等级';
+
+-- ==================== 消息通知 ====================
+DROP TABLE IF EXISTS t_message;
+CREATE TABLE t_message (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    title VARCHAR(200) NOT NULL,
+    content TEXT,
+    type INT DEFAULT 1 COMMENT '1系统 2订单 3促销 4售后',
+    is_read INT DEFAULT 0 COMMENT '0未读 1已读',
+    order_id BIGINT COMMENT '关联订单ID',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user_read (user_id, is_read)
+) COMMENT '消息/站内信';
+
+-- ==================== 物流 ====================
+DROP TABLE IF EXISTS t_logistics;
+CREATE TABLE t_logistics (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    order_id BIGINT NOT NULL,
+    company VARCHAR(50) COMMENT '快递公司',
+    tracking_no VARCHAR(50) COMMENT '快递单号',
+    trace_data TEXT COMMENT '物流轨迹JSON',
+    status INT DEFAULT 0 COMMENT '0待揽收 1运输中 2派送中 3已签收',
+    ship_time DATETIME,
+    sign_time DATETIME,
+    INDEX idx_order_id (order_id),
+    INDEX idx_tracking_no (tracking_no)
+) COMMENT '物流信息';
+
+-- ==================== 订单日志 ====================
+DROP TABLE IF EXISTS t_order_log;
+CREATE TABLE t_order_log (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    order_id BIGINT NOT NULL,
+    operator_id BIGINT COMMENT '操作人ID',
+    operator_type INT COMMENT '1用户 2商家 3系统',
+    action VARCHAR(100) NOT NULL COMMENT '操作描述',
+    old_status INT,
+    new_status INT,
+    remark VARCHAR(500),
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_order_id (order_id)
+) COMMENT '订单操作日志';
+
+-- ==================== 库存流水 ====================
+DROP TABLE IF EXISTS t_stock_log;
+CREATE TABLE t_stock_log (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    sku_id BIGINT NOT NULL,
+    order_id BIGINT,
+    before_stock INT NOT NULL,
+    change_count INT NOT NULL COMMENT '变动数量(负=扣减)',
+    after_stock INT NOT NULL,
+    type INT COMMENT '1下单锁库存 2支付扣减 3取消回滚 4商家修改',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_sku_id (sku_id)
+) COMMENT '库存流水';
+
+-- ==================== 搜索热词 ====================
+DROP TABLE IF EXISTS t_search_hot_word;
+CREATE TABLE t_search_hot_word (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    keyword VARCHAR(100) NOT NULL UNIQUE,
+    search_count INT DEFAULT 0 COMMENT '搜索次数',
+    is_manual INT DEFAULT 0 COMMENT '0自动 1人工设置',
+    sort INT DEFAULT 0,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP
+) COMMENT '搜索热词';
+
+-- ==================== 活动 ====================
+DROP TABLE IF EXISTS t_activity;
+CREATE TABLE t_activity (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(200) NOT NULL,
+    type INT NOT NULL COMMENT '1限时折扣 2拼团 3秒杀 4预售 5满减',
+    rules TEXT COMMENT '活动规则JSON',
+    start_time DATETIME NOT NULL,
+    end_time DATETIME NOT NULL,
+    status INT DEFAULT 0 COMMENT '0草稿 1待审 2进行中 3已结束',
+    merchant_id BIGINT COMMENT '商家ID(平台活动为NULL)',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_time (start_time, end_time),
+    INDEX idx_status (status)
+) COMMENT '营销活动';
+
+DROP TABLE IF EXISTS t_activity_product;
+CREATE TABLE t_activity_product (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    activity_id BIGINT NOT NULL,
+    product_id BIGINT NOT NULL,
+    sku_id BIGINT,
+    activity_price INT COMMENT '活动价(分)',
+    stock INT COMMENT '活动库存',
+    INDEX idx_activity (activity_id)
+) COMMENT '活动商品关联';
+
+-- ==================== 拼团 ====================
+DROP TABLE IF EXISTS t_group_buy;
+CREATE TABLE t_group_buy (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    activity_id BIGINT NOT NULL,
+    sku_id BIGINT NOT NULL,
+    leader_id BIGINT NOT NULL COMMENT '团长用户ID',
+    required_count INT DEFAULT 2 COMMENT '成团人数',
+    current_count INT DEFAULT 1 COMMENT '当前人数',
+    group_price INT NOT NULL COMMENT '拼团价(分)',
+    status INT DEFAULT 0 COMMENT '0拼团中 1已成团 2失败',
+    expire_time DATETIME COMMENT '过期时间',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_status (status),
+    INDEX idx_activity (activity_id)
+) COMMENT '拼团';
+
+DROP TABLE IF EXISTS t_group_buy_member;
+CREATE TABLE t_group_buy_member (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    group_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    order_id BIGINT COMMENT '关联订单',
+    is_leader INT DEFAULT 0 COMMENT '0团员 1团长',
+    join_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_group (group_id)
+) COMMENT '拼团成员';
+
+-- ==================== 预售 ====================
+DROP TABLE IF EXISTS t_presale;
+CREATE TABLE t_presale (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    activity_id BIGINT NOT NULL,
+    sku_id BIGINT NOT NULL,
+    deposit INT NOT NULL COMMENT '定金(分)',
+    final_amount INT NOT NULL COMMENT '尾款(分)',
+    deposit_start DATETIME COMMENT '定金开始时间',
+    deposit_end DATETIME COMMENT '定金结束时间',
+    final_start DATETIME COMMENT '尾款开始时间',
+    final_end DATETIME COMMENT '尾款结束时间',
+    status INT DEFAULT 0 COMMENT '0未开始 1定金期 2尾款期 3结束',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP
+) COMMENT '预售';
+
+-- ==================== 组合套餐 ====================
+DROP TABLE IF EXISTS t_combo_package;
+CREATE TABLE t_combo_package (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(200) NOT NULL,
+    description VARCHAR(500),
+    total_price INT NOT NULL COMMENT '套餐总价(分)',
+    original_price INT COMMENT '原价合计(分)',
+    merchant_id BIGINT,
+    status INT DEFAULT 1,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP
+) COMMENT '组合套餐';
+
+DROP TABLE IF EXISTS t_combo_item;
+CREATE TABLE t_combo_item (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    combo_id BIGINT NOT NULL,
+    sku_id BIGINT NOT NULL,
+    quantity INT DEFAULT 1,
+    INDEX idx_combo (combo_id)
+) COMMENT '套餐商品明细';
+
+-- ==================== 分销 ====================
+DROP TABLE IF EXISTS t_distribution;
+CREATE TABLE t_distribution (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL UNIQUE COMMENT '分销员用户ID',
+    parent_id BIGINT COMMENT '上级分销员',
+    total_commission INT DEFAULT 0 COMMENT '累计佣金(分)',
+    available_commission INT DEFAULT 0,
+    level INT DEFAULT 0 COMMENT '分销等级',
+    status INT DEFAULT 1,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP
+) COMMENT '分销员';
+
+-- ==================== 公告与配置 ====================
+DROP TABLE IF EXISTS t_notice;
+CREATE TABLE t_notice (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    content TEXT,
+    type INT DEFAULT 1 COMMENT '1系统公告 2活动公告 3弹窗',
+    is_top INT DEFAULT 0 COMMENT '是否置顶',
+    status INT DEFAULT 1 COMMENT '0隐藏 1显示',
+    start_time DATETIME,
+    end_time DATETIME,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP
+) COMMENT '公告';
+
+DROP TABLE IF EXISTS t_system_config;
+CREATE TABLE t_system_config (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    config_key VARCHAR(100) NOT NULL UNIQUE COMMENT '配置键',
+    config_value TEXT COMMENT '配置值',
+    description VARCHAR(200) COMMENT '说明',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) COMMENT '系统配置';
+
+-- ==================== 统计表 ====================
+DROP TABLE IF EXISTS t_stat_daily;
+CREATE TABLE t_stat_daily (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    stat_date DATE NOT NULL,
+    merchant_id BIGINT,
+    order_count INT DEFAULT 0 COMMENT '订单数',
+    order_amount BIGINT DEFAULT 0 COMMENT '订单金额(分)',
+    pay_count INT DEFAULT 0 COMMENT '支付笔数',
+    pay_amount BIGINT DEFAULT 0 COMMENT '支付金额(分)',
+    new_user_count INT DEFAULT 0 COMMENT '新增用户',
+    visit_count INT DEFAULT 0 COMMENT '访问量PV',
+    visit_user_count INT DEFAULT 0 COMMENT '访客数UV',
+    UNIQUE INDEX uk_date_merchant (stat_date, merchant_id)
+) COMMENT '每日统计';
+
+-- ==================== 红包 ====================
+DROP TABLE IF EXISTS t_red_envelope;
+CREATE TABLE t_red_envelope (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    sender_id BIGINT NOT NULL COMMENT '发送人用户ID',
+    receiver_id BIGINT COMMENT '接收人用户ID',
+    order_id BIGINT COMMENT '关联订单ID',
+    amount INT NOT NULL COMMENT '金额(分)',
+    type INT DEFAULT 1 COMMENT '1普通红包 2订单返利红包',
+    status INT DEFAULT 0 COMMENT '0未领取 1已领取 2已过期',
+    message VARCHAR(200) COMMENT '祝福语',
+    expire_time DATETIME COMMENT '过期时间(默认24小时)',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    receive_time DATETIME,
+    INDEX idx_sender (sender_id),
+    INDEX idx_receiver (receiver_id)
+) COMMENT '红包';
+
+-- ==================== 数据字典 ====================
+DROP TABLE IF EXISTS t_dict_type;
+CREATE TABLE t_dict_type (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    dict_name VARCHAR(100) NOT NULL COMMENT '字典名称',
+    dict_code VARCHAR(100) NOT NULL UNIQUE COMMENT '字典编码',
+    description VARCHAR(200) COMMENT '描述',
+    status INT DEFAULT 1 COMMENT '1启用 0停用',
+    INDEX idx_code (dict_code)
+) COMMENT '字典类型';
+
+DROP TABLE IF EXISTS t_dict_item;
+CREATE TABLE t_dict_item (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    dict_type_id BIGINT NOT NULL COMMENT '字典类型ID',
+    label VARCHAR(100) NOT NULL COMMENT '字典标签',
+    value VARCHAR(100) NOT NULL COMMENT '字典值',
+    sort INT DEFAULT 0 COMMENT '排序',
+    css_class VARCHAR(50) COMMENT 'CSS样式类',
+    status INT DEFAULT 1 COMMENT '1启用 0停用',
+    INDEX idx_type (dict_type_id)
+) COMMENT '字典项';
+
+-- ==================== 违规处罚 ====================
+DROP TABLE IF EXISTS t_violation;
+CREATE TABLE t_violation (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    merchant_id BIGINT NOT NULL COMMENT '商家ID',
+    type INT NOT NULL COMMENT '1商品违规 2虚假发货 3欺诈',
+    reason VARCHAR(500) COMMENT '违规原因',
+    penalty_type INT COMMENT '1警告 2罚款 3下架商品 4封店',
+    penalty_amount INT DEFAULT 0 COMMENT '罚金(分)',
+    status INT DEFAULT 0 COMMENT '0待执行 1已执行 2已申诉',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_merchant (merchant_id)
+) COMMENT '违规处罚';
+
+-- ==================== 会员等级初始数据 ====================
+INSERT INTO t_member_level (level_name, level_code, min_amount, discount_rate, free_shipping) VALUES
+('普通会员', 0, 0, 100, 0),
+('银卡会员', 1, 50000, 98, 0),
+('金卡会员', 2, 200000, 95, 1),
+('钻石会员', 3, 500000, 90, 1);
+
+-- 系统配置初始数据
+INSERT INTO t_system_config (config_key, config_value, description) VALUES
+('order_auto_cancel_minutes', '30', '未支付订单自动取消时间(分钟)'),
+('point_rate', '100', '消费积分比例(消费多少分得1积分)'),
+('free_shipping_threshold', '9900', '免运费门槛(分)'),
+('seckill_default_qps', '100', '秒杀默认QPS限制');

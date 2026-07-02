@@ -39,6 +39,22 @@ public class OrderController {
         return R.ok();
     }
 
+    /** 取消订单 */
+    @PostMapping("/{id}/cancel")
+    public R<Void> cancel(@RequestAttribute("userId") Long userId,
+                          @PathVariable Long id) {
+        orderService.cancel(id, userId);
+        return R.ok();
+    }
+
+    /** 商家改单 */
+    @PutMapping("/{id}")
+    public R<Void> modify(@PathVariable Long id,
+                          @RequestBody Map<String, Object> body) {
+        orderService.modify(id, body);
+        return R.ok();
+    }
+
     /** 商家发货 */
     @PostMapping("/{id}/ship")
     public R<Void> ship(@PathVariable Long id,

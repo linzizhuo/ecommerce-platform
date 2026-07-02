@@ -8,6 +8,7 @@ import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @RestController
@@ -19,6 +20,10 @@ public class MerchantController {
     @Resource private OrderMapper orderMapper;
     @Resource private OrderItemMapper orderItemMapper;
     @Resource private PaymentMapper paymentMapper;
+    @Resource private PresaleMapper presaleMapper;
+    @Resource private ComboPackageMapper comboPackageMapper;
+    @Resource private ComboItemMapper comboItemMapper;
+    @Resource private DistributionMapper distributionMapper;
 
     /** 商家商品列表 */
     @GetMapping("/products")
@@ -95,6 +100,122 @@ public class MerchantController {
         data.put("orderCount", orders.size());
         data.put("todayOrders", todayOrders);
         data.put("revenue", revenue);
+        return R.ok(data);
+    }
+
+    // ===== 预售管理 =====
+    @GetMapping("/presale/list")
+    public R<List<Presale>> presaleList() {
+        return R.ok(presaleMapper.selectList(
+            new LambdaQueryWrapper<Presale>().orderByDesc(Presale::getCreateTime)));
+    }
+
+    @PostMapping("/presale")
+    public R<Void> createPresale(@RequestBody Map<String, Object> body) {
+        Presale p = new Presale();
+        p.setSkuId(Long.valueOf(body.get("skuId").toString()));
+        p.setDeposit(Integer.parseInt(body.get("deposit").toString()));
+        p.setFinalAmount(Integer.parseInt(body.get("finalAmount").toString()));
+        p.setDepositStart(LocalDateTime.parse((String) body.get("depositStart"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        p.setDepositEnd(LocalDateTime.parse((String) body.get("depositEnd"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        p.setFinalStart(LocalDateTime.parse((String) body.get("finalStart"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        p.setFinalEnd(LocalDateTime.parse((String) body.get("finalEnd"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        p.setStatus(1);
+        p.setCreateTime(LocalDateTime.now());
+        presaleMapper.insert(p);
+        return R.ok();
+    }
+
+    @PutMapping("/presale/{id}")
+    public R<Void> updatePresale(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        Presale p = presaleMapper.selectById(id);
+        if (p != null) {
+            if (body.containsKey("deposit")) p.setDeposit(Integer.parseInt(body.get("deposit").toString()));
+            if (body.containsKey("finalAmount")) p.setFinalAmount(Integer.parseInt(body.get("finalAmount").toString()));
+            if (body.containsKey("status")) p.setStatus((Integer) body.get("status"));
+            presaleMapper.updateById(p);
+        }
+        return R.ok();
+    }
+
+    @DeleteMapping("/presale/{id}")
+    public R<Void> deletePresale(@PathVariable Long id) {
+        presaleMapper.deleteById(id);
+        return R.ok();
+    }
+
+    // ===== 套餐管理 =====
+    @GetMapping("/combo/list")
+    public R<List<Map<String, Object>>> comboList() {
+        List<ComboPackage> list = comboPackageMapper.selectList(
+            new LambdaQueryWrapper<ComboPackage>().orderByDesc(ComboPackage::getCreateTime));
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (ComboPackage cp : list) {
+            Map<String, Object> m = new HashMap<>();
+            m.put("id", cp.getId());
+            m.put("name", cp.getName());
+            m.put("description", cp.getDescription());
+            m.put("totalPrice", cp.getTotalPrice());
+            m.put("discountPrice", cp.getOriginalPrice());
+            m.put("status", cp.getStatus());
+            m.put("items", comboItemMapper.selectList(
+                new LambdaQueryWrapper<ComboItem>().eq(ComboItem::getComboId, cp.getId())));
+            result.add(m);
+        }
+        return R.ok(result);
+    }
+
+    @PostMapping("/combo")
+    public R<Void> createCombo(@RequestBody Map<String, Object> body) {
+        ComboPackage cp = new ComboPackage();
+        cp.setName((String) body.get("name"));
+        cp.setDescription((String) body.get("description"));
+        cp.setTotalPrice(Integer.parseInt(body.get("totalPrice").toString()));
+        cp.setOriginalPrice(Integer.parseInt(body.get("discountPrice").toString()));
+        cp.setStatus(1);
+        cp.setCreateTime(LocalDateTime.now());
+        comboPackageMapper.insert(cp);
+
+        List<Map<String, Object>> items = (List<Map<String, Object>>) body.get("items");
+        if (items != null) {
+            for (Map<String, Object> item : items) {
+                ComboItem ci = new ComboItem();
+                ci.setComboId(cp.getId());
+                ci.setSkuId(Long.valueOf(item.get("skuId").toString()));
+                ci.setQuantity((Integer) item.getOrDefault("quantity", 1));
+                comboItemMapper.insert(ci);
+            }
+        }
+        return R.ok();
+    }
+
+    @DeleteMapping("/combo/{id}")
+    public R<Void> deleteCombo(@PathVariable Long id) {
+        comboItemMapper.delete(new LambdaQueryWrapper<ComboItem>().eq(ComboItem::getComboId, id));
+        comboPackageMapper.deleteById(id);
+        return R.ok();
+    }
+
+    // ===== 分销管理 =====
+    @GetMapping("/distribution/list")
+    public R<List<Distribution>> distributionList() {
+        return R.ok(distributionMapper.selectList(
+            new LambdaQueryWrapper<Distribution>().orderByDesc(Distribution::getCreateTime)));
+    }
+
+    @GetMapping("/distribution/settings")
+    public R<Map<String, Object>> distributionSettings() {
+        List<Distribution> list = distributionMapper.selectList(null);
+        int totalDistributors = list.size();
+        int totalCommission = list.stream()
+                .mapToInt(d -> d.getTotalCommission() != null ? d.getTotalCommission() : 0).sum();
+        Map<String, Object> data = new HashMap<>();
+        data.put("totalDistributors", totalDistributors);
+        data.put("totalCommission", totalCommission);
         return R.ok(data);
     }
 }

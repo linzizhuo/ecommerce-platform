@@ -23,8 +23,9 @@
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="时间" width="160" />
-        <el-table-column label="操作" width="200">
+        <el-table-column label="操作" width="280">
           <template #default="{row}">
+            <el-button size="small" @click="$router.push(`/order/${row.id}`)">查看详情</el-button>
             <el-button v-if="row.status===0" type="danger" size="small" @click="payOrder(row)">去支付</el-button>
             <el-button v-if="row.status===2" type="primary" size="small" @click="confirmReceive(row)">确认收货</el-button>
             <el-button v-if="row.status===3" type="warning" size="small" @click="openReview(row)">⭐ 评价</el-button>

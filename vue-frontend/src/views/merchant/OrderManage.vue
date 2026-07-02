@@ -1,12 +1,18 @@
 <template>
   <div class="page">
     <el-container>
-      <el-header class="m-header">
-        <span class="title">CloudMall 商家后台</span>
+      <el-header class="mh"><span>CloudMall 商家后台</span>
         <div><router-link to="/merchant/dashboard">看板</router-link>
           <router-link to="/merchant/products">商品</router-link>
           <router-link to="/merchant/orders">订单</router-link>
-          <router-link to="/merchant/coupons">优惠券</router-link></div>
+          <router-link to="/merchant/coupons">优惠券</router-link>
+          <router-link to="/merchant/seckill">秒杀</router-link>
+          <router-link to="/merchant/groupbuy">拼团</router-link>
+          <router-link to="/merchant/presale">预售</router-link>
+          <router-link to="/merchant/distribution">分销</router-link>
+          <router-link to="/merchant/combo">套餐</router-link>
+          <router-link to="/merchant/redenvelope">红包</router-link>
+          <router-link to="/" style="color:#ff4d4f">回前台</router-link></div>
       </el-header>
       <el-main>
         <h3>订单管理</h3>
@@ -54,7 +60,6 @@ async function doShip() {
 onMounted(loadOrders)
 </script>
 <style scoped>.page { min-height: 100vh; background: #f5f5f5; }
-.m-header { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: flex; align-items: center; justify-content: space-between; }
-.title { font-size: 20px; font-weight: bold; color: #1890ff; }
-.m-header a { margin: 0 10px; color: #666; text-decoration: none; }
+.mh{background:#fff;display:flex;align-items:center;justify-content:space-between;font-size:20px;font-weight:700;color:#1890ff;padding:0 20px;height:60px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.mh a{margin:0 10px;color:#666;text-decoration:none;font-size:14px;font-weight:400}
 .el-main { max-width: 1200px; margin: 20px auto; }</style>

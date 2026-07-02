@@ -3,10 +3,15 @@
     <el-aside width="220px" class="aside"><h3>CloudMall</h3>
       <el-menu :default-active="$route.path" background-color="#304156" text-color="#bfcbd9" active-text-color="#409EFF" router>
         <el-menu-item index="/admin/dashboard">📊 数据大屏</el-menu-item>
+        <el-menu-item index="/admin/statistics">📈 数据统计</el-menu-item>
         <el-menu-item index="/admin/users">👤 用户管理</el-menu-item>
         <el-menu-item index="/admin/merchants">🏪 商家管理</el-menu-item>
         <el-menu-item index="/admin/products">📦 商品审核</el-menu-item>
         <el-menu-item index="/admin/roles">🔐 角色权限</el-menu-item>
+        <el-menu-item index="/admin/activities">🎯 活动管理</el-menu-item>
+        <el-menu-item index="/admin/dict">📋 数据字典</el-menu-item>
+        <el-menu-item index="/admin/violations">⚠️ 违规处罚</el-menu-item>
+        <el-menu-item index="/admin/config">⚙️ 系统配置</el-menu-item>
       </el-menu>
     </el-aside>
     <el-main class="main">
