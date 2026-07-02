@@ -8,6 +8,7 @@ import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -24,6 +25,9 @@ public class MerchantController {
     @Resource private ComboPackageMapper comboPackageMapper;
     @Resource private ComboItemMapper comboItemMapper;
     @Resource private DistributionMapper distributionMapper;
+    @Resource private ActivityMapper activityMapper;
+    @Resource private StatDailyMapper statDailyMapper;
+    @Resource private AfterSaleMapper afterSaleMapper;
 
     /** 商家商品列表 */
     @GetMapping("/products")
@@ -86,22 +90,6 @@ public class MerchantController {
         return R.ok(result);
     }
 
-    /** 数据看板 */
-    @GetMapping("/dashboard")
-    public R<Map<String, Object>> dashboard() {
-        List<Product> products = productMapper.selectList(null);
-        List<Order> orders = orderMapper.selectList(null);
-        long todayOrders = orders.stream().filter(o -> o.getCreateTime() != null &&
-            o.getCreateTime().toLocalDate().equals(LocalDateTime.now().toLocalDate())).count();
-        int revenue = orders.stream().filter(o -> o.getStatus() != null && o.getStatus() >= 1)
-            .mapToInt(o -> o.getPayAmount() != null ? o.getPayAmount() : 0).sum();
-        Map<String, Object> data = new HashMap<>();
-        data.put("productCount", products.size());
-        data.put("orderCount", orders.size());
-        data.put("todayOrders", todayOrders);
-        data.put("revenue", revenue);
-        return R.ok(data);
-    }
 
     // ===== 预售管理 =====
     @GetMapping("/presale/list")
@@ -217,5 +205,168 @@ public class MerchantController {
         data.put("totalDistributors", totalDistributors);
         data.put("totalCommission", totalCommission);
         return R.ok(data);
+    }
+
+    // ===== 增强看板（含访客/转化/趋势） =====
+    @GetMapping("/dashboard")
+    public R<Map<String, Object>> dashboard() {
+        List<Product> products = productMapper.selectList(null);
+        List<Order> orders = orderMapper.selectList(null);
+        long todayOrders = orders.stream().filter(o -> o.getCreateTime() != null &&
+            o.getCreateTime().toLocalDate().equals(LocalDateTime.now().toLocalDate())).count();
+        int revenue = orders.stream().filter(o -> o.getStatus() != null && o.getStatus() >= 1)
+            .mapToInt(o -> o.getPayAmount() != null ? o.getPayAmount() : 0).sum();
+
+        // 近7天访客数据（按日期聚合所有商家）
+        List<StatDaily> weekStats = statDailyMapper.selectList(
+            new LambdaQueryWrapper<StatDaily>()
+                .ge(StatDaily::getStatDate, LocalDate.now().minusDays(7))
+                .orderByAsc(StatDaily::getStatDate));
+        int totalVisits = weekStats.stream().mapToInt(s -> s.getVisitCount() != null ? s.getVisitCount() : 0).sum();
+        int totalVisitors = weekStats.stream().mapToInt(s -> s.getVisitUserCount() != null ? s.getVisitUserCount() : 0).sum();
+        double conversionRate = totalVisitors > 0 ? Math.round(todayOrders * 10000.0 / totalVisitors) / 100.0 : 0;
+
+        // 近7天趋势数据
+        List<Map<String, Object>> trend = new ArrayList<>();
+        for (StatDaily s : weekStats) {
+            Map<String, Object> point = new HashMap<>();
+            point.put("statDate", s.getStatDate() != null ? s.getStatDate().toString() : "");
+            point.put("orderCount", s.getOrderCount() != null ? s.getOrderCount() : 0);
+            point.put("payAmount", s.getPayAmount() != null ? s.getPayAmount() : 0);
+            point.put("visitCount", s.getVisitCount() != null ? s.getVisitCount() : 0);
+            trend.add(point);
+        }
+
+        // 库存预警：SKU库存低于10
+        List<Sku> lowStockSkus = skuMapper.selectList(
+            new LambdaQueryWrapper<Sku>().lt(Sku::getStock, 10));
+        int lowStockCount = lowStockSkus.size();
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("productCount", products.size());
+        data.put("orderCount", orders.size());
+        data.put("todayOrders", todayOrders);
+        data.put("revenue", revenue);
+        data.put("visitCount", totalVisits);
+        data.put("visitUserCount", totalVisitors);
+        data.put("conversionRate", conversionRate);
+        data.put("lowStockCount", lowStockCount);
+        data.put("trend", trend);
+        return R.ok(data);
+    }
+
+    // ===== 对账报表 =====
+    @GetMapping("/reconciliation")
+    public R<List<Map<String, Object>>> reconciliation(
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        LambdaQueryWrapper<Order> qw = new LambdaQueryWrapper<Order>()
+                .ge(Order::getStatus, 1)
+                .orderByDesc(Order::getCreateTime);
+        if (startDate != null && !startDate.isEmpty()) {
+            qw.ge(Order::getPayTime, LocalDateTime.parse(startDate + "T00:00:00"));
+        }
+        if (endDate != null && !endDate.isEmpty()) {
+            qw.le(Order::getPayTime, LocalDateTime.parse(endDate + "T23:59:59"));
+        }
+        List<Order> orders = orderMapper.selectList(qw);
+        Map<String, Map<String, Object>> dailyMap = new LinkedHashMap<>();
+        for (Order o : orders) {
+            String dateKey = o.getPayTime() != null ?
+                    o.getPayTime().toLocalDate().toString() :
+                    o.getCreateTime().toLocalDate().toString();
+            dailyMap.computeIfAbsent(dateKey, k -> {
+                Map<String, Object> m = new HashMap<>();
+                m.put("date", k);
+                m.put("orderCount", 0);
+                m.put("totalAmount", 0);
+                return m;
+            });
+            Map<String, Object> d = dailyMap.get(dateKey);
+            d.put("orderCount", (Integer) d.get("orderCount") + 1);
+            d.put("totalAmount", (Integer) d.get("totalAmount") +
+                    (o.getPayAmount() != null ? o.getPayAmount() : 0));
+        }
+        return R.ok(new ArrayList<>(dailyMap.values()));
+    }
+
+    // ===== 库存报表 =====
+    @GetMapping("/stock-report")
+    public R<List<Map<String, Object>>> stockReport() {
+        List<Product> products = productMapper.selectList(null);
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Product p : products) {
+            List<Sku> skus = skuMapper.selectList(
+                new LambdaQueryWrapper<Sku>().eq(Sku::getProductId, p.getId()));
+            int totalStock = skus.stream().mapToInt(s -> s.getStock() != null ? s.getStock() : 0).sum();
+            boolean alert = skus.stream().anyMatch(s -> s.getStock() != null && s.getStock() < 10);
+            Map<String, Object> m = new HashMap<>();
+            m.put("productId", p.getId());
+            m.put("productName", p.getName());
+            m.put("totalStock", totalStock);
+            m.put("skuCount", skus.size());
+            m.put("lowStockAlert", alert);
+            m.put("skus", skus);
+            result.add(m);
+        }
+        return R.ok(result);
+    }
+
+    // ===== 商家活动管理 =====
+    @GetMapping("/activities")
+    public R<List<Activity>> activities() {
+        return R.ok(activityMapper.selectList(
+            new LambdaQueryWrapper<Activity>().orderByDesc(Activity::getCreateTime)));
+    }
+
+    @PostMapping("/activity")
+    public R<Void> createActivity(@RequestBody Map<String, Object> body) {
+        Activity a = new Activity();
+        a.setName((String) body.get("name"));
+        a.setType((Integer) body.get("type"));
+        a.setRules((String) body.get("rules"));
+        a.setStartTime(LocalDateTime.parse((String) body.get("startTime"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        a.setEndTime(LocalDateTime.parse((String) body.get("endTime"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        a.setStatus(1);
+        a.setCreateTime(LocalDateTime.now());
+        activityMapper.insert(a);
+        return R.ok();
+    }
+
+    @PutMapping("/activity/{id}")
+    public R<Void> updateActivity(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        Activity a = activityMapper.selectById(id);
+        if (a != null) {
+            if (body.containsKey("status")) a.setStatus((Integer) body.get("status"));
+            if (body.containsKey("name")) a.setName((String) body.get("name"));
+            if (body.containsKey("rules")) a.setRules((String) body.get("rules"));
+            activityMapper.updateById(a);
+        }
+        return R.ok();
+    }
+
+    @DeleteMapping("/activity/{id}")
+    public R<Void> deleteActivity(@PathVariable Long id) {
+        activityMapper.deleteById(id);
+        return R.ok();
+    }
+
+    // ===== 商家售后列表 =====
+    @GetMapping("/aftersales")
+    public R<List<AfterSale>> aftersales() {
+        return R.ok(afterSaleMapper.selectList(
+            new LambdaQueryWrapper<AfterSale>().orderByDesc(AfterSale::getCreateTime)));
+    }
+
+    @PutMapping("/aftersale/{id}")
+    public R<Void> handleAftersale(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        AfterSale a = afterSaleMapper.selectById(id);
+        if (a != null) {
+            a.setStatus((Integer) body.get("status"));
+            afterSaleMapper.updateById(a);
+        }
+        return R.ok();
     }
 }

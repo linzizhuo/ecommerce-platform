@@ -5,6 +5,11 @@
       <h2>个人中心</h2>
       <el-card style="margin-bottom:20px">
         <p>👤 {{ userStore.user?.nickname }} | 📱 {{ userStore.user?.phone }}</p>
+        <p v-if="levelInfo" style="margin-top:8px">
+          🏅 会员等级: <el-tag type="danger" size="large">{{ levelInfo.levelName }}</el-tag>
+          消费折扣 {{ levelInfo.discountRate }}%
+          {{ levelInfo.freeShipping ? ' · 包邮' : '' }}
+        </p>
       </el-card>
 
       <!-- 快捷入口 -->
@@ -79,11 +84,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'; import { ElMessage } from 'element-plus'; import { useUserStore } from '@/stores/userStore'; import request from '@/utils/request'
+import { ref, reactive, computed, onMounted } from 'vue'; import { ElMessage } from 'element-plus'; import { useUserStore } from '@/stores/userStore'; import request from '@/utils/request'; import { getMyPoints, getLevels } from '@/api/point'
 const userStore = useUserStore()
 const addresses = ref<any[]>([]); const addrVisible = ref(false)
 const myCoupons = ref<any[]>([]); const availCoupons = ref<any[]>([]); const showReceive = ref(false)
 const addr = reactive({ receiver:'', phone:'', province:'', city:'', district:'', detail:'' })
+const levels = ref<any[]>([]); const myPoint = ref<any>({})
+
+const levelInfo = computed(() => {
+  if (!myPoint.value || !levels.value.length) return null
+  const totalSpent = myPoint.value.totalSpent || 0
+  let best = levels.value[0]
+  for (const l of levels.value) { if (totalSpent >= (l.minAmount || 0)) best = l }
+  return best
+})
 
 async function loadAddr() { const r:any = await request.get('/address'); addresses.value=r.data||[] }
 async function saveAddr() { await request.post('/address', addr); ElMessage.success('已保存'); addrVisible.value=false; loadAddr() }
@@ -93,7 +107,13 @@ function openReceive() { showReceive.value = true; loadAvail() }
 async function receiveCoupon(id:number) {
   await request.post(`/coupon/receive/${id}`); ElMessage.success('领取成功'); loadMyCoupons(); loadAvail()
 }
-onMounted(() => { userStore.fetchUser(); loadAddr(); loadMyCoupons() })
+async function loadLevelInfo() {
+  try {
+    const [pRes, lRes] = await Promise.all([getMyPoints(), getLevels()])
+    myPoint.value = pRes.data || {}; levels.value = lRes.data || []
+  } catch {}
+}
+onMounted(() => { userStore.fetchUser(); loadAddr(); loadMyCoupons(); loadLevelInfo() })
 </script>
 
 <style scoped>

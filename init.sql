@@ -660,3 +660,27 @@ INSERT INTO t_system_config (config_key, config_value, description) VALUES
 ('point_rate', '100', '消费积分比例(消费多少分得1积分)'),
 ('free_shipping_threshold', '9900', '免运费门槛(分)'),
 ('seckill_default_qps', '100', '秒杀默认QPS限制');
+
+-- ==================== 活动会场 ====================
+DROP TABLE IF EXISTS t_venue;
+CREATE TABLE t_venue (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL COMMENT '会场名称',
+    description VARCHAR(500) COMMENT '会场描述',
+    page_config TEXT COMMENT '页面配置JSON: banner/product_ids/coupon_ids/background等',
+    start_time DATETIME COMMENT '开始时间',
+    end_time DATETIME COMMENT '结束时间',
+    status INT DEFAULT 0 COMMENT '0草稿 1已发布 2已下线',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP
+) COMMENT '活动会场';
+
+-- ==================== 用户标签/画像 ====================
+DROP TABLE IF EXISTS t_user_tag;
+CREATE TABLE t_user_tag (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL COMMENT '用户ID',
+    tag_name VARCHAR(50) COMMENT '标签名: spending_tier/fav_category/avg_order/recent_freq',
+    tag_value VARCHAR(100) COMMENT '标签值',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user (user_id)
+) COMMENT '用户标签画像';

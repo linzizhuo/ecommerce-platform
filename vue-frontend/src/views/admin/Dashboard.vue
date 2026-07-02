@@ -9,6 +9,7 @@
         <el-menu-item index="/admin/products">📦 商品审核</el-menu-item>
         <el-menu-item index="/admin/roles">🔐 角色权限</el-menu-item>
         <el-menu-item index="/admin/activities">🎯 活动管理</el-menu-item>
+        <el-menu-item index="/admin/venues">🏟️ 会场管理</el-menu-item>
         <el-menu-item index="/admin/dict">📋 数据字典</el-menu-item>
         <el-menu-item index="/admin/violations">⚠️ 违规处罚</el-menu-item>
         <el-menu-item index="/admin/config">⚙️ 系统配置</el-menu-item>

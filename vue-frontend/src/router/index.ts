@@ -4,16 +4,16 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     // ====== C端 (Portal) ======
-    { path: '/', name: 'home', component: () => import('@/views/portal/HomeView.vue') },
+    { path: '/', name: 'home', component: () => import('@/views/portal/HomeView.vue'), meta: { keepAlive: true } },
     { path: '/login', name: 'login', component: () => import('@/views/portal/LoginView.vue') },
     { path: '/register', name: 'register', component: () => import('@/views/portal/RegisterView.vue') },
-    { path: '/product/list', name: 'productList', component: () => import('@/views/portal/ProductList.vue') },
+    { path: '/product/list', name: 'productList', component: () => import('@/views/portal/ProductList.vue'), meta: { keepAlive: true } },
     { path: '/product/:id', name: 'productDetail', component: () => import('@/views/portal/ProductDetail.vue') },
     { path: '/cart', name: 'cart', component: () => import('@/views/portal/CartView.vue') },
     { path: '/checkout', name: 'checkout', component: () => import('@/views/portal/CheckoutView.vue') },
-    { path: '/orders', name: 'orders', component: () => import('@/views/portal/OrderList.vue') },
+    { path: '/orders', name: 'orders', component: () => import('@/views/portal/OrderList.vue'), meta: { keepAlive: true } },
     { path: '/order/:id', name: 'orderDetail', component: () => import('@/views/portal/OrderDetail.vue') },
-    { path: '/user/center', name: 'userCenter', component: () => import('@/views/portal/UserCenter.vue') },
+    { path: '/user/center', name: 'userCenter', component: () => import('@/views/portal/UserCenter.vue'), meta: { keepAlive: true } },
     // C端高并发新增
     { path: '/seckill', name: 'seckill', component: () => import('@/views/portal/SeckillView.vue') },
     { path: '/search', name: 'search', component: () => import('@/views/portal/SearchView.vue') },
@@ -28,12 +28,14 @@ const router = createRouter({
     { path: '/distribution', name: 'distribution', component: () => import('@/views/portal/DistributionView.vue') },
     { path: '/combo', name: 'combo', component: () => import('@/views/portal/ComboView.vue') },
     { path: '/red-envelope', name: 'redEnvelope', component: () => import('@/views/portal/RedEnvelopeView.vue') },
+    { path: '/pay/:orderId', name: 'pay', component: () => import('@/views/portal/PayView.vue') },
+    { path: '/venue/:id', name: 'venue', component: () => import('@/views/portal/VenueView.vue') },
 
     // ====== 商家端 (Merchant) ======
     { path: '/merchant', redirect: '/merchant/dashboard' },
     { path: '/merchant/login', name: 'merchantLogin', component: () => import('@/views/merchant/LoginView.vue') },
-    { path: '/merchant/dashboard', name: 'merchantDashboard', component: () => import('@/views/merchant/Dashboard.vue') },
-    { path: '/merchant/products', name: 'merchantProducts', component: () => import('@/views/merchant/ProductManage.vue') },
+    { path: '/merchant/dashboard', name: 'merchantDashboard', component: () => import('@/views/merchant/Dashboard.vue'), meta: { keepAlive: true } },
+    { path: '/merchant/products', name: 'merchantProducts', component: () => import('@/views/merchant/ProductManage.vue'), meta: { keepAlive: true } },
     { path: '/merchant/product/edit/:id?', name: 'merchantProductEdit', component: () => import('@/views/merchant/ProductEdit.vue') },
     { path: '/merchant/orders', name: 'merchantOrders', component: () => import('@/views/merchant/OrderManage.vue') },
     { path: '/merchant/coupons', name: 'merchantCoupons', component: () => import('@/views/merchant/CouponManage.vue') },
@@ -44,6 +46,9 @@ const router = createRouter({
     { path: '/merchant/distribution', name: 'merchantDistribution', component: () => import('@/views/merchant/DistributionManage.vue') },
     { path: '/merchant/combo', name: 'merchantCombo', component: () => import('@/views/merchant/ComboManage.vue') },
     { path: '/merchant/redenvelope', name: 'merchantRedEnvelope', component: () => import('@/views/merchant/RedEnvelopeManage.vue') },
+    { path: '/merchant/activities', name: 'merchantActivities', component: () => import('@/views/merchant/ActivityManage.vue') },
+    { path: '/merchant/reconciliation', name: 'merchantReconciliation', component: () => import('@/views/merchant/ReconciliationView.vue') },
+    { path: '/merchant/stock-report', name: 'merchantStockReport', component: () => import('@/views/merchant/StockReport.vue') },
 
     // ====== 平台端 (Admin) ======
     { path: '/admin', redirect: '/admin/dashboard' },
@@ -59,6 +64,7 @@ const router = createRouter({
     { path: '/admin/activities', name: 'adminActivities', component: () => import('@/views/admin/ActivityManage.vue') },
     { path: '/admin/dict', name: 'adminDict', component: () => import('@/views/admin/DictManage.vue') },
     { path: '/admin/violations', name: 'adminViolations', component: () => import('@/views/admin/ViolationManage.vue') },
+    { path: '/admin/venues', name: 'adminVenues', component: () => import('@/views/admin/VenueManage.vue') },
   ]
 })
 

@@ -7,6 +7,7 @@ import com.cloudmall.mapper.CategoryMapper;
 import com.cloudmall.mapper.ProductMapper;
 import com.cloudmall.mapper.SkuMapper;
 import com.cloudmall.service.ProductService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Cache;
 import jakarta.annotation.Resource;
 import org.redisson.api.RLock;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
@@ -64,6 +66,9 @@ public class ProductServiceImpl implements ProductService {
     @Resource
     private Cache<String, List<Category>> categoryCache; // L1: 分类列表本地缓存
 
+    /** 用于将 Redis 反序列化的 Map 转回实体对象 */
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
     // ==================== Redis Key 常量 ====================
 
     private static final String PRODUCT_KEY = "cache:product:";    // 商品详情
@@ -97,17 +102,32 @@ public class ProductServiceImpl implements ProductService {
         // ② L2: 查 Redis（毫秒级，一次网络往返）
         String key = PRODUCT_KEY + id;
         Object obj = redisTemplate.opsForValue().get(key);
-        if (obj != null) {
-            if (obj instanceof Product product) {
-                productCache.put(id, product);  // 回填 L1
-                return product;
-            }
-            // 是空标记 → 防缓存穿透
-            return null;
+        Product fromRedis = toProduct(obj);
+        if (fromRedis != null) {
+            productCache.put(id, fromRedis);
+            return isNullObject(fromRedis) ? null : fromRedis;
         }
 
         // ③ Redis也没有 → 加分布式锁重建缓存（防缓存击穿）
         return rebuildProductCache(id, key);
+    }
+
+    /**
+     * 安全转换 Redis 缓存对象 → Product
+     * 无类型信息时反序列化得到 LinkedHashMap，需要手动转
+     */
+    @SuppressWarnings("unchecked")
+    private Product toProduct(Object obj) {
+        if (obj == null) return null;
+        if (obj instanceof Product p) return p;
+        if (obj instanceof Map map) {
+            try {
+                return MAPPER.convertValue(map, Product.class);
+            } catch (Exception e) {
+                return null;
+            }
+        }
+        return null;
     }
 
     /**
@@ -122,9 +142,10 @@ public class ProductServiceImpl implements ProductService {
             if (lock.tryLock(1, 10, TimeUnit.SECONDS)) {
                 // 双重检查 — 可能别的线程已经重建好了
                 Object obj = redisTemplate.opsForValue().get(key);
-                if (obj instanceof Product product) {
-                    productCache.put(id, product);
-                    return product;
+                Product existing = toProduct(obj);
+                if (existing != null) {
+                    productCache.put(id, existing);
+                    return isNullObject(existing) ? null : existing;
                 }
 
                 // 查数据库

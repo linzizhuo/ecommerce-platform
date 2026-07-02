@@ -32,6 +32,9 @@ public class Product {
     /** 状态: 0下架 1上架 */
     private Integer status;
 
+    /** 销量 */
+    private Integer salesCount;
+
     /** 主图 */
     private String mainImage;
 

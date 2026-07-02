@@ -54,8 +54,6 @@ public class OrderServiceImpl {
     @Resource
     private LogisticsMapper logisticsMapper;
     @Resource
-    private PaymentMapper paymentMapper;
-    @Resource
     private RedissonClient redissonClient;
     @Resource
     private ProductServiceImpl productService;

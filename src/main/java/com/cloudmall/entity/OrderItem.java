@@ -12,6 +12,7 @@ public class OrderItem {
     private Long id;
     private Long orderId;
     private Long skuId;
+    private Long productId;
     private String productName;
     private String specInfo;
     private Integer price;

@@ -97,9 +97,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { ShoppingCart, Tickets, ArrowDown } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/userStore'
 import request from '@/utils/request'
+
+const router = useRouter()
 
 const userStore = useUserStore()
 const keyword = ref('')
@@ -149,7 +152,7 @@ async function loadCategories() {
 function search() { catId.value = null; loadProducts() }
 function goBanner() {
   if (homeConfig.value.bannerLink) {
-    if (homeConfig.value.bannerLink.startsWith('/')) $router.push(homeConfig.value.bannerLink)
+    if (homeConfig.value.bannerLink.startsWith('/')) router.push(homeConfig.value.bannerLink)
     else window.location.href = homeConfig.value.bannerLink
   }
 }

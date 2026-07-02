@@ -8,5 +8,6 @@
 const products=ref<any[]>([])
 async function load(){ const r:any=await request.get('/admin/products'); products.value=r.data||[] }
 async function audit(row:any,status:number){ await request.put('/admin/product/'+row.id+'/status',{status}); load() }
-onMounted(load)</script>
+onMounted(load)
+</script>
 <style scoped>.page{min-height:100vh;background:#f0f2f5}.aside{background:#304156;min-height:100vh;padding:20px 0}.aside h3{text-align:center;color:#fff;margin-bottom:20px;font-size:20px}.main{background:#f0f2f5;min-height:100vh;padding:24px}</style>

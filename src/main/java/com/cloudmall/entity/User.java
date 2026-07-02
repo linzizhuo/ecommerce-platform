@@ -32,5 +32,8 @@ public class User {
     /** 状态: 0禁用 1正常 */
     private Integer status;
 
+    /** 累计消费金额(分) */
+    private Long totalSpent;
+
     private LocalDateTime createTime;
 }

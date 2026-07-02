@@ -73,8 +73,7 @@ async function submitOrder() {
   submitting.value = true
   try {
     const res: any = await request.post('/order', { addressId: addressId.value, addressSnapshot: JSON.stringify(addr), payMethod: payMethod.value, couponId: selectedCouponId.value })
-    await request.post(`/order/${res.data.orderId}/pay`, { payMethod: payMethod.value })
-    ElMessage.success('支付成功!'); router.push('/orders')
+    ElMessage.success('下单成功，请支付!'); router.push('/pay/' + res.data.orderId)
   } finally { submitting.value = false }
 }
 onMounted(async () => {

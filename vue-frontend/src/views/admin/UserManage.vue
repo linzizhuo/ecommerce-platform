@@ -9,5 +9,6 @@
 const users=ref<any[]>([])
 async function load(){ const r:any=await request.get('/admin/users'); users.value=r.data||[] }
 async function toggle(row:any){ await request.put('/admin/user/'+row.id+'/status',{status:row.status===1?0:1}); load() }
-onMounted(load)</script>
+onMounted(load)
+</script>
 <style scoped>.page{min-height:100vh;background:#f0f2f5}.aside{background:#304156;min-height:100vh;padding:20px 0}.aside h3{text-align:center;color:#fff;margin-bottom:20px;font-size:20px}.main{background:#f0f2f5;min-height:100vh;padding:24px}</style>

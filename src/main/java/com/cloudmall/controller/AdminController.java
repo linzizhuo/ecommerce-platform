@@ -200,21 +200,6 @@ public class AdminController {
             new LambdaQueryWrapper<Violation>().orderByDesc(Violation::getCreateTime)));
     }
 
-    @PostMapping("/violation")
-    public R<Void> createViolation(@RequestBody Map<String, Object> body) {
-        Violation v = new Violation();
-        v.setMerchantId(Long.valueOf(body.get("merchantId").toString()));
-        v.setType((Integer) body.get("type"));
-        v.setReason((String) body.get("reason"));
-        v.setPenaltyType((Integer) body.get("penaltyType"));
-        v.setPenaltyAmount(body.get("penaltyAmount") != null ?
-                (Integer) body.get("penaltyAmount") : 0);
-        v.setStatus(0);
-        v.setCreateTime(LocalDateTime.now());
-        violationMapper.insert(v);
-        return R.ok();
-    }
-
     // ===== 对账报表 =====
     @GetMapping("/reconciliation")
     public R<List<Map<String, Object>>> reconciliation(
