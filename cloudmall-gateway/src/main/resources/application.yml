@@ -1,0 +1,66 @@
+server:
+  port: 8080
+
+spring:
+  cloud:
+    gateway:
+      # CORS 全局配置
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        # ===== 用户服务 =====
+        - id: user-service
+          uri: lb://cloudmall-user
+          predicates:
+            - Path=/api/user/**
+          filters:
+            - StripPrefix=0
+        - id: address-service
+          uri: lb://cloudmall-user
+          predicates:
+            - Path=/api/address/**
+        - id: admin-service
+          uri: lb://cloudmall-user
+          predicates:
+            - Path=/api/admin/**
+        - id: violation-service
+          uri: lb://cloudmall-user
+          predicates:
+            - Path=/api/violation/**
+
+        # ===== 商品服务 =====
+        - id: product-service
+          uri: lb://cloudmall-product
+          predicates:
+            - Path=/api/product/**,/api/search/**,/api/review/**,/api/favorite/**,/api/venue/**
+
+        # ===== 订单服务 =====
+        - id: order-service
+          uri: lb://cloudmall-order
+          predicates:
+            - Path=/api/cart/**,/api/order/**,/api/payment/**,/api/aftersale/**,/api/logistics/**
+
+        # ===== 营销服务 =====
+        - id: marketing-service
+          uri: lb://cloudmall-marketing
+          predicates:
+            - Path=/api/seckill/**,/api/groupbuy/**,/api/presale/**,/api/coupon/**,/api/combo/**,/api/distribution/**,/api/red-envelope/**,/api/redenvelope/**,/api/point/**,/api/message/**,/api/notice/**,/api/dict/**,/api/statistics/**,/api/merchant/**
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+        namespace: public
+
+  main:
+    web-application-type: reactive
+
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO

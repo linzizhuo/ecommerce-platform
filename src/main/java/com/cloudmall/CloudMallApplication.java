@@ -3,6 +3,7 @@ package com.cloudmall;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * CloudMall MV架构启动类
@@ -11,6 +12,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * Controller直接调用Mapper, 无Service层
  */
 @SpringBootApplication
+@EnableScheduling
 @MapperScan("com.cloudmall.mapper")
 public class CloudMallApplication {
 

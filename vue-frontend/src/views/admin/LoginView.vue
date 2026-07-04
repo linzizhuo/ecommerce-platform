@@ -9,7 +9,16 @@
 </template>
 <script setup lang="ts">
 import { ref } from 'vue'; import { useRouter } from 'vue-router'; import { ElMessage } from 'element-plus'
-const router = useRouter(); const username = ref(''); const password = ref('')
-function login() { ElMessage.success('登录成功'); router.push('/admin/dashboard') }
+import request from '@/utils/request'
+const router = useRouter(); const username = ref(''); const password = ref(''); const loading = ref(false)
+async function login() {
+  loading.value = true
+  try {
+    const res: any = await request.post('/admin/login', { username: username.value, password: password.value })
+    localStorage.setItem('token', res.data)
+    ElMessage.success('登录成功')
+    router.push('/admin/dashboard')
+  } finally { loading.value = false }
+}
 </script>
 <style scoped>.login-page{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#304156,#1890ff)}.form-card{width:400px}h2{text-align:center;margin-bottom:20px}</style>

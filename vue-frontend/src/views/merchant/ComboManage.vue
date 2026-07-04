@@ -1,10 +1,6 @@
 <template>
-  <el-container style="min-height:100vh">
-    <el-header class="mh"><span>CloudMall 商家后台</span>
-      <div><router-link to="/merchant/dashboard">看板</router-link><router-link to="/merchant/products">商品</router-link><router-link to="/merchant/orders">订单</router-link><router-link to="/merchant/coupons">优惠券</router-link><router-link to="/merchant/seckill">秒杀</router-link><router-link to="/merchant/groupbuy">拼团</router-link><router-link to="/merchant/presale">预售</router-link><router-link to="/merchant/distribution">分销</router-link><router-link to="/merchant/combo">套餐</router-link><router-link to="/merchant/redenvelope">红包</router-link><router-link to="/" style="color:#ff4d4f">回前台</router-link></div>
-    </el-header>
-    <el-main style="max-width:1200px;margin:0 auto;padding:20px">
-      <el-button type="primary" @click="showDialog()" style="margin-bottom:16px">创建套餐</el-button>
+  <MerchantLayout>
+    <el-button type="primary" @click="showDialog()" style="margin-bottom:16px">创建套餐</el-button>
       <el-table :data="list" stripe>
         <el-table-column prop="id" label="ID" width="80"/>
         <el-table-column prop="name" label="套餐名称"/>
@@ -35,11 +31,11 @@
         </el-form>
         <template #footer><el-button @click="dialog=false">取消</el-button><el-button type="primary" @click="save">保存</el-button></template>
       </el-dialog>
-    </el-main>
-  </el-container>
+  </MerchantLayout>
 </template>
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import MerchantLayout from '@/layouts/MerchantLayout.vue'
 import request from '@/utils/request'
 import { ElMessage } from 'element-plus'
 
@@ -56,7 +52,4 @@ async function save() {
 async function del(id: number) { await request.delete('/merchant/combo/' + id); ElMessage.success('已删除'); load() }
 onMounted(load)
 </script>
-<style scoped>
-.mh{background:#fff;display:flex;align-items:center;justify-content:space-between;font-size:20px;font-weight:700;color:#1890ff;padding:0 20px;height:60px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
-.mh a{margin:0 10px;color:#666;text-decoration:none;font-size:14px;font-weight:400}
-</style>
+

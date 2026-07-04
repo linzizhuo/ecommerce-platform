@@ -23,21 +23,67 @@
 </template>
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { getSeckillSessions, doSeckill } from '@/api/seckill'
+import { useRouter } from 'vue-router'
+import { getSeckillSessions, doSeckill, getSeckillResult } from '@/api/seckill'
 import { ElMessage } from 'element-plus'
 
+const router = useRouter()
 const sessions = ref<any[]>([])
 let timer: any = null
+let pollTimer: any = null
 
 async function load() { const r: any = await getSeckillSessions(); sessions.value = r.data || [] }
-function canBuy(s: any) { return s.status === 1 && s.stock > 0 }
-function countdown(s: any) { return s.startTime ? '开始: ' + s.startTime : '进行中' }
+function canBuy(s: any) {
+  const now = new Date()
+  const start = new Date(s.startTime)
+  const end = new Date(s.endTime)
+  return now >= start && now <= end && s.stock > 0
+}
+function countdown(s: any) {
+  const now = new Date()
+  const start = new Date(s.startTime)
+  const end = new Date(s.endTime)
+  if (now < start) {
+    const diff = Math.floor((start.getTime() - now.getTime()) / 1000)
+    const h = Math.floor(diff / 3600)
+    const m = Math.floor((diff % 3600) / 60)
+    const sec = diff % 60
+    return `距开始: ${h}时${m}分${sec}秒`
+  }
+  if (now > end) return '已结束'
+  const diff = Math.floor((end.getTime() - now.getTime()) / 1000)
+  const h = Math.floor(diff / 3600)
+  const m = Math.floor((diff % 3600) / 60)
+  const sec = diff % 60
+  return `距结束: ${h}时${m}分${sec}秒`
+}
 async function doBuy(id: number) {
-  try { await doSeckill(id); ElMessage.success('抢购成功，订单生成中...'); load() }
+  try { await doSeckill(id); ElMessage.success('抢购成功，订单生成中...'); startPolling(id) }
   catch {}
 }
+function startPolling(sessionId: number) {
+  let count = 0
+  pollTimer = setInterval(async () => {
+    count++
+    try {
+      const r: any = await getSeckillResult(sessionId)
+      const data = r.data
+      if (data.status === 'SUCCESS') {
+        clearInterval(pollTimer)
+        ElMessage.success('订单已生成！')
+        router.push(`/order/${data.orderId}`)
+      } else if (data.status === 'FAILED') {
+        clearInterval(pollTimer)
+        ElMessage.error('订单生成失败，请查看订单列表')
+      } else if (count > 20) {
+        clearInterval(pollTimer)
+        ElMessage.warning('订单处理中，请稍后在订单列表查看')
+      }
+    } catch { /* 继续轮询 */ }
+  }, 1500)
+}
 onMounted(() => { load(); timer = setInterval(load, 5000) })
-onUnmounted(() => clearInterval(timer))
+onUnmounted(() => { clearInterval(timer); clearInterval(pollTimer) })
 </script>
 <style scoped>
 .page{background:#f0f2f5;min-height:100vh}

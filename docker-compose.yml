@@ -17,3 +17,13 @@ services:
     container_name: cloudmall-redis
     ports:
       - "6379:6379"
+
+  nacos:
+    image: nacos/nacos-server:v2.3.0
+    container_name: cloudmall-nacos
+    environment:
+      - MODE=standalone
+      - PREFER_HOST_MODE=hostname
+    ports:
+      - "8848:8848"
+      - "9848:9848"

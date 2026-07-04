@@ -60,6 +60,9 @@
             <el-radio :value="2">订单返利</el-radio>
           </el-radio-group>
         </el-form-item>
+        <el-form-item label="订单编号">
+          <el-input v-model="sendForm.orderNo" placeholder="输入关联订单编号" />
+        </el-form-item>
         <el-form-item label="祝福语">
           <el-input v-model="sendForm.message" placeholder="恭喜发财！" />
         </el-form-item>
@@ -79,7 +82,7 @@ const tab = ref('received')
 const received = ref<any[]>([])
 const sent = ref<any[]>([])
 const showSend = ref(false)
-const sendForm = ref({ amount: 10, type: 1, message: '恭喜发财！' })
+const sendForm = ref({ amount: 10, type: 1, message: '恭喜发财！', orderNo: '' })
 
 async function loadReceived() { const r: any = await getReceivedEnvelopes(); received.value = r.data || [] }
 async function loadSent() { const r: any = await getSentEnvelopes(); sent.value = r.data || [] }
@@ -87,10 +90,15 @@ async function doReceive(id: number) {
   try { await receiveRedEnvelope(id); ElMessage.success('领取成功'); loadReceived() } catch {}
 }
 async function doSend() {
+  const orderNo = sendForm.value.orderNo || null
+  if (!orderNo && sendForm.value.type === 2) {
+    ElMessage.warning('订单返利红包必须填写订单编号')
+    return
+  }
   try {
-    await sendRedEnvelope({ amount: Math.round(sendForm.value.amount * 100), type: sendForm.value.type, message: sendForm.value.message })
+    await sendRedEnvelope({ amount: Math.round(sendForm.value.amount * 100), type: sendForm.value.type, message: sendForm.value.message, orderNo })
     ElMessage.success('红包已发送'); showSend.value = false; loadSent()
-  } catch {}
+  } catch { /* 错误已由 request 拦截器统一提示 */ }
 }
 onMounted(() => { loadReceived(); loadSent() })
 </script>

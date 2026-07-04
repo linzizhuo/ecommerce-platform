@@ -1,10 +1,6 @@
 <template>
-  <div class="page"><el-container>
-    <el-header class="mh"><span>CloudMall 商家后台</span>
-      <div><router-link to="/merchant/dashboard">看板</router-link><router-link to="/merchant/products">商品</router-link><router-link to="/merchant/orders">订单</router-link><router-link to="/merchant/coupons">优惠券</router-link><router-link to="/merchant/seckill">秒杀</router-link><router-link to="/merchant/groupbuy">拼团</router-link><router-link to="/merchant/presale">预售</router-link><router-link to="/merchant/distribution">分销</router-link><router-link to="/merchant/combo">套餐</router-link><router-link to="/merchant/redenvelope">红包</router-link><router-link to="/" style="color:#ff4d4f">回前台</router-link></div>
-    </el-header>
-    <el-main>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+  <MerchantLayout>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
         <h3>商品管理</h3>
         <el-button type="primary" @click="$router.push('/merchant/product/edit')">+ 发布商品</el-button>
       </div>
@@ -19,14 +15,14 @@
           <template #default="{row}"><el-button size="small" @click="$router.push(`/merchant/product/edit/${row.id}`)">编辑</el-button><el-button size="small" type="danger" @click="del(row.id)">删除</el-button></template>
         </el-table-column>
       </el-table>
-    </el-main>
-  </el-container></div>
+  </MerchantLayout>
 </template>
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'; import request from '@/utils/request'
+import { ref, onMounted } from 'vue'
+import MerchantLayout from '@/layouts/MerchantLayout.vue'; import request from '@/utils/request'
 const products = ref<any[]>([])
 async function load() { const r:any = await request.get('/merchant/products'); products.value = r.data||[] }
 async function del(id:number) { await request.delete(`/merchant/product/${id}`); load() }
 onMounted(load)
 </script>
-<style scoped>.page{min-height:100vh;background:#f0f2f5}.mh{background:#fff;display:flex;align-items:center;justify-content:space-between;font-size:20px;font-weight:700;color:#1890ff;padding:0 20px;height:60px;box-shadow:0 1px 4px rgba(0,0,0,.06)}.mh a{margin:0 10px;color:#666;text-decoration:none;font-size:14px;font-weight:400}.el-main{max-width:1200px;margin:20px auto}</style>
+<style scoped>.page{min-height:100vh;background:#f0f2f5}.el-main{max-width:1200px;margin:20px auto}</style>

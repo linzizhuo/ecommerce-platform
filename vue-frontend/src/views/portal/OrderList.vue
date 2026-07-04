@@ -80,7 +80,7 @@ async function submitReview() {
   const items = res.data?.items || []
   // 为每个商品提交评价
   for (const item of items) {
-    await request.post('/review', { productId: item.skuId, rating: reviewRating.value, content: reviewContent.value })
+    await request.post('/review', { productId: item.productId, rating: reviewRating.value, content: reviewContent.value })
   }
   ElMessage.success('评价成功!')
   reviewVisible.value = false

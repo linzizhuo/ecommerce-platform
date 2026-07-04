@@ -2,9 +2,11 @@ package com.cloudmall.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.cloudmall.common.result.R;
+import com.cloudmall.common.utils.JwtUtil;
 import com.cloudmall.entity.*;
 import com.cloudmall.mapper.*;
 import jakarta.annotation.Resource;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -24,6 +26,33 @@ public class AdminController {
     @Resource private ActivityMapper activityMapper;
     @Resource private ActivityProductMapper activityProductMapper;
     @Resource private ViolationMapper violationMapper;
+    @Resource private AdminUserMapper adminUserMapper;
+    @Resource private RoleMapper roleMapper;
+
+    // ===== 管理员登录 =====
+    @PostMapping("/login")
+    public R<String> login(@RequestBody Map<String, String> body) {
+        String username = body.get("username");
+        String password = body.get("password");
+        if (username == null || password == null) return R.fail("用户名和密码不能为空");
+
+        AdminUser admin = adminUserMapper.selectOne(
+            new LambdaQueryWrapper<AdminUser>().eq(AdminUser::getUsername, username));
+        if (admin == null) return R.fail("用户不存在");
+        if (admin.getStatus() != null && admin.getStatus() != 1) return R.fail("账号已被禁用");
+
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+        if (!encoder.matches(password, admin.getPassword())) return R.fail("密码错误");
+
+        String token = JwtUtil.generate(admin.getId(), admin.getUsername());
+        return R.ok(token);
+    }
+
+    // ===== 角色权限 =====
+    @GetMapping("/roles")
+    public R<List<Role>> roles() {
+        return R.ok(roleMapper.selectList(null));
+    }
 
     // ===== 数据大屏 =====
     @GetMapping("/dashboard")

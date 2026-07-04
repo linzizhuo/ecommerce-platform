@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.cloudmall.common.result.R;
 import com.cloudmall.entity.*;
 import com.cloudmall.mapper.*;
+import com.cloudmall.service.impl.SeckillService;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,6 +29,8 @@ public class MerchantController {
     @Resource private ActivityMapper activityMapper;
     @Resource private StatDailyMapper statDailyMapper;
     @Resource private AfterSaleMapper afterSaleMapper;
+    @Resource private SeckillSessionMapper seckillSessionMapper;
+    @Resource private SeckillService seckillService;
 
     /** 商家商品列表 */
     @GetMapping("/products")
@@ -367,6 +370,39 @@ public class MerchantController {
             a.setStatus((Integer) body.get("status"));
             afterSaleMapper.updateById(a);
         }
+        return R.ok();
+    }
+
+    // ===== 秒杀场次管理 =====
+    @GetMapping("/seckill/list")
+    public R<List<SeckillSession>> seckillList() {
+        return R.ok(seckillSessionMapper.selectList(
+            new LambdaQueryWrapper<SeckillSession>().orderByDesc(SeckillSession::getCreateTime)));
+    }
+
+    @PostMapping("/seckill")
+    public R<Void> createSeckill(@RequestBody Map<String, Object> body) {
+        SeckillSession session = new SeckillSession();
+        session.setSkuId(Long.valueOf(body.get("skuId").toString()));
+        session.setSeckillPrice(Integer.parseInt(body.get("seckillPrice").toString()));
+        session.setStock(Integer.parseInt(body.get("stock").toString()));
+        session.setTotalStock(Integer.parseInt(body.get("stock").toString()));
+        session.setSoldCount(0);
+        session.setStartTime(LocalDateTime.parse((String) body.get("startTime"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        session.setEndTime(LocalDateTime.parse((String) body.get("endTime"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        session.setStatus(0); // 0=未开始
+        session.setCreateTime(LocalDateTime.now());
+        seckillSessionMapper.insert(session);
+        // 创建后立即预热到Redis
+        seckillService.warmUp(session.getId());
+        return R.ok();
+    }
+
+    @DeleteMapping("/seckill/{id}")
+    public R<Void> deleteSeckill(@PathVariable Long id) {
+        seckillSessionMapper.deleteById(id);
         return R.ok();
     }
 }

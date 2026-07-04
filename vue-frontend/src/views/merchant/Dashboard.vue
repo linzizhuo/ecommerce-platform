@@ -1,10 +1,6 @@
 <template>
-  <div class="page"><el-container>
-    <el-header class="mh"><span>CloudMall 商家后台</span>
-      <div><router-link to="/merchant/dashboard">看板</router-link><router-link to="/merchant/products">商品</router-link><router-link to="/merchant/orders">订单</router-link><router-link to="/merchant/coupons">优惠券</router-link><router-link to="/merchant/seckill">秒杀</router-link><router-link to="/merchant/groupbuy">拼团</router-link><router-link to="/merchant/presale">预售</router-link><router-link to="/merchant/distribution">分销</router-link><router-link to="/merchant/combo">套餐</router-link><router-link to="/merchant/redenvelope">红包</router-link><router-link to="/merchant/activities">活动</router-link><router-link to="/merchant/reconciliation">对账</router-link><router-link to="/merchant/stock-report">库存</router-link><router-link to="/" style="color:#ff4d4f">回前台</router-link></div>
-    </el-header>
-    <el-main>
-      <h3>数据看板</h3>
+  <MerchantLayout>
+    <h3>数据看板</h3>
       <!-- 概览卡片 -->
       <el-row :gutter="20" style="margin-top:16px">
         <el-col :span="4"><el-card class="sc" style="background:linear-gradient(135deg,#667eea,#764ba2)"><div class="sv">{{ data.productCount }}</div><div class="sl">商品总数</div></el-card></el-col>
@@ -25,11 +21,11 @@
         <template #header><span class="card-title">📊 订单 & 营收趋势（近7天）</span></template>
         <div ref="chartRef" style="height:350px"></div>
       </el-card>
-    </el-main>
-  </el-container></div>
+  </MerchantLayout>
 </template>
 <script setup lang="ts">
 import { reactive, ref, onMounted, nextTick } from 'vue'
+import MerchantLayout from '@/layouts/MerchantLayout.vue'
 import * as echarts from 'echarts'
 import request from '@/utils/request'
 
@@ -64,14 +60,10 @@ onMounted(async () => {
   await nextTick(); initChart()
 })
 </script>
-<style scoped>
 .page{min-height:100vh;background:#f0f2f5}
-.mh{background:#fff;display:flex;align-items:center;justify-content:space-between;font-size:20px;font-weight:700;color:#1890ff;padding:0 20px;height:60px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
-.mh a{margin:0 6px;color:#666;text-decoration:none;font-size:13px;font-weight:400}
 .mh a.router-link-active{color:#1890ff}
 .el-main{max-width:1200px;margin:20px auto}
 .sc{border-radius:12px;color:#fff;border:none;text-align:center;padding:10px}
 .sv{font-size:30px;font-weight:700}
 .sl{font-size:13px;opacity:.9;margin-top:4px}
 .card-title{font-weight:700;font-size:15px}
-</style>
