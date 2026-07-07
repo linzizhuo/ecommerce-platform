@@ -77,9 +77,14 @@ public class OrderServiceImpl {
                 .mapToInt(item -> (Integer) item.get("price") * (Integer) item.get("quantity"))
                 .sum();
 
-        // 提取商品ID列表用于满减匹配
+        // 提取商品ID列表用于满减匹配（cart未存productId，通过skuId关联查询）
         List<Long> productIds = cartItems.stream()
-                .map(item -> Long.valueOf(item.get("productId").toString()))
+                .map(item -> {
+                    Long skuId = Long.valueOf(item.get("skuId").toString());
+                    Sku sku = skuMapper.selectById(skuId);
+                    return sku != null ? sku.getProductId() : null;
+                })
+                .filter(Objects::nonNull)
                 .distinct().toList();
 
         int couponDiscount = calculateCouponDiscount(couponId, userId, totalAmount);
@@ -107,6 +112,10 @@ public class OrderServiceImpl {
                 Long skuId = Long.valueOf(item.get("skuId").toString());
                 int quantity = (Integer) item.get("quantity");
 
+                // 记录扣减前库存
+                Sku sku = skuMapper.selectById(skuId);
+                int beforeStock = sku != null ? sku.getStock() : 0;
+
                 int rows = skuMapper.deductStock(skuId, quantity);
                 if (rows == 0) {
                     throw new BusinessException("商品[" + item.get("productName") + "]库存不足");
@@ -114,7 +123,9 @@ public class OrderServiceImpl {
                 // 记录库存流水
                 StockLog sl = new StockLog();
                 sl.setSkuId(skuId);
+                sl.setBeforeStock(beforeStock);
                 sl.setChangeCount(-quantity);
+                sl.setAfterStock(beforeStock - quantity);
                 sl.setType(1); // 下单扣减
                 sl.setCreateTime(LocalDateTime.now());
                 stockLogMapper.insert(sl);
@@ -133,9 +144,13 @@ public class OrderServiceImpl {
 
         // 6. 订单明细
         for (Map<String, Object> item : cartItems) {
+            Long skuId = Long.valueOf(item.get("skuId").toString());
+            Sku sku = skuMapper.selectById(skuId);
+
             OrderItem oi = new OrderItem();
             oi.setOrderId(order.getId());
-            oi.setSkuId(Long.valueOf(item.get("skuId").toString()));
+            oi.setSkuId(skuId);
+            oi.setProductId(sku != null ? sku.getProductId() : null);
             oi.setProductName((String) item.get("productName"));
             oi.setSpecInfo((String) item.get("specInfo"));
             oi.setPrice((Integer) item.get("price"));
@@ -267,12 +282,17 @@ public class OrderServiceImpl {
         List<OrderItem> items = orderItemMapper.selectList(
             new LambdaQueryWrapper<OrderItem>().eq(OrderItem::getOrderId, orderId));
         for (OrderItem item : items) {
+            // 记录回滚前库存
+            Sku sku = skuMapper.selectById(item.getSkuId());
+            int beforeStock = sku != null ? sku.getStock() : 0;
             skuMapper.restoreStock(item.getSkuId(), item.getQuantity());
             // 库存流水
             StockLog sl = new StockLog();
             sl.setSkuId(item.getSkuId());
             sl.setOrderId(orderId);
+            sl.setBeforeStock(beforeStock);
             sl.setChangeCount(item.getQuantity());
+            sl.setAfterStock(beforeStock + item.getQuantity());
             sl.setType(3); // 取消回滚
             sl.setCreateTime(LocalDateTime.now());
             stockLogMapper.insert(sl);
@@ -311,10 +331,14 @@ public class OrderServiceImpl {
             List<OrderItem> oldItems = orderItemMapper.selectList(
                 new LambdaQueryWrapper<OrderItem>().eq(OrderItem::getOrderId, orderId));
             for (OrderItem oi : oldItems) {
+                Sku oldSku = skuMapper.selectById(oi.getSkuId());
+                int beforeStock = oldSku != null ? oldSku.getStock() : 0;
                 skuMapper.restoreStock(oi.getSkuId(), oi.getQuantity());
                 StockLog sl = new StockLog();
                 sl.setSkuId(oi.getSkuId()); sl.setOrderId(orderId);
-                sl.setChangeCount(oi.getQuantity()); sl.setType(3);
+                sl.setBeforeStock(beforeStock);
+                sl.setChangeCount(oi.getQuantity()); sl.setAfterStock(beforeStock + oi.getQuantity());
+                sl.setType(3);
                 sl.setCreateTime(LocalDateTime.now());
                 stockLogMapper.insert(sl);
             }
@@ -327,17 +351,22 @@ public class OrderServiceImpl {
                 int qty = (Integer) ni.get("quantity");
                 int price = (Integer) ni.get("price");
 
+                Sku skuForLog = skuMapper.selectById(skuId);
+                int beforeStock = skuForLog != null ? skuForLog.getStock() : 0;
                 int rows = skuMapper.deductStock(skuId, qty);
                 if (rows == 0) throw new BusinessException("SKU[" + skuId + "]库存不足");
 
                 StockLog sl = new StockLog();
                 sl.setSkuId(skuId); sl.setOrderId(orderId);
-                sl.setChangeCount(-qty); sl.setType(1);
+                sl.setBeforeStock(beforeStock);
+                sl.setChangeCount(-qty); sl.setAfterStock(beforeStock - qty);
+                sl.setType(1);
                 sl.setCreateTime(LocalDateTime.now());
                 stockLogMapper.insert(sl);
 
                 OrderItem oi = new OrderItem();
                 oi.setOrderId(orderId); oi.setSkuId(skuId);
+                oi.setProductId(skuForLog != null ? skuForLog.getProductId() : null);
                 oi.setProductName((String) ni.getOrDefault("productName", ""));
                 oi.setSpecInfo((String) ni.getOrDefault("specInfo", ""));
                 oi.setPrice(price); oi.setQuantity(qty);

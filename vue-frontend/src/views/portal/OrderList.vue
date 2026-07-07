@@ -78,9 +78,9 @@ async function submitReview() {
   // 获取订单商品
   const res: any = await request.get(`/order/${reviewOrder.value.id}`)
   const items = res.data?.items || []
-  // 为每个商品提交评价
+  // 为每个商品提交评价，同时传 productId 和 skuId，后端优先用 productId
   for (const item of items) {
-    await request.post('/review', { productId: item.productId, rating: reviewRating.value, content: reviewContent.value })
+    await request.post('/review', { productId: item.productId, skuId: item.skuId, rating: reviewRating.value, content: reviewContent.value })
   }
   ElMessage.success('评价成功!')
   reviewVisible.value = false

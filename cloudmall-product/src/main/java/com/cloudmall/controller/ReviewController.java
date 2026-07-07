@@ -3,7 +3,9 @@ package com.cloudmall.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.cloudmall.common.result.R;
 import com.cloudmall.entity.Review;
+import com.cloudmall.entity.Sku;
 import com.cloudmall.mapper.ReviewMapper;
+import com.cloudmall.mapper.SkuMapper;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,6 +18,8 @@ public class ReviewController {
 
     @Resource
     private ReviewMapper reviewMapper;
+    @Resource
+    private SkuMapper skuMapper;
 
     /** 商品评价列表 */
     @GetMapping("/product/{productId}")
@@ -36,11 +40,30 @@ public class ReviewController {
     @PostMapping
     public R<Void> submit(@RequestAttribute("userId") Long userId,
                           @RequestBody Map<String, Object> body) {
+        // 参数校验
+        Object productIdObj = body.get("productId");
+        Object skuIdObj = body.get("skuId");
+        Object ratingObj = body.get("rating");
+        if (ratingObj == null) return R.fail(400, "请给出评分");
+
+        // productId 优先，为空时从 skuId 推导
+        Long productId;
+        if (productIdObj != null) {
+            productId = Long.valueOf(productIdObj.toString());
+        } else if (skuIdObj != null) {
+            Long skuId = Long.valueOf(skuIdObj.toString());
+            Sku sku = skuMapper.selectById(skuId);
+            if (sku == null) return R.fail(400, "SKU不存在");
+            productId = sku.getProductId();
+        } else {
+            return R.fail(400, "请指定商品ID或SKUID");
+        }
+
         Review r = new Review();
         r.setUserId(userId);
-        r.setProductId(Long.valueOf(body.get("productId").toString()));
+        r.setProductId(productId);
         r.setOrderId(body.get("orderId") != null ? Long.valueOf(body.get("orderId").toString()) : null);
-        r.setRating((Integer) body.get("rating"));
+        r.setRating(ratingObj instanceof Integer ? (Integer) ratingObj : Integer.valueOf(ratingObj.toString()));
         r.setContent((String) body.getOrDefault("content", ""));
         r.setCreateTime(LocalDateTime.now());
         reviewMapper.insert(r);

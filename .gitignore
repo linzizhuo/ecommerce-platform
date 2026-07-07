@@ -18,6 +18,9 @@ Thumbs.db
 # Logs
 *.log
 
+# Java heap dumps
+*.hprof
+
 # Node (for later branches)
 node_modules/
 dist/

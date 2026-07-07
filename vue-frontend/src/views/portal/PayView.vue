@@ -54,7 +54,9 @@ const paid = ref(false)
 async function load() {
   const id = route.params.orderId
   const r: any = await request.get('/order/' + id)
-  order.value = r.data
+  // 后端返回 { order, items, logistics, payment }，展平到 order 对象上
+  const data = r.data
+  order.value = { ...data.order, items: data.items, logistics: data.logistics, payment: data.payment }
 }
 async function doPay() {
   paying.value = true
